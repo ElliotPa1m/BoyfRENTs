@@ -7,6 +7,7 @@ import productRoutes from "./routes/products.js"
 import orderRoutes from "./routes/orders.js"
 import authRoutes from "./routes/auth.js"
 import cartRoutes from "./routes/cart.js"
+import currencyRoutes from "./routes/currency.js"
 
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 dotenv.config()
@@ -20,6 +21,7 @@ app.use("/api/products", productRoutes)
 app.use("/api/orders", orderRoutes)
 app.use("/api/auth", authRoutes)
 app.use("/api/cart", cartRoutes)
+app.use("/api/currency", currencyRoutes)
 
 app.get("/api/ping", (req, res) => {
   res.json({ status: "ok" })

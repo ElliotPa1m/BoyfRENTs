@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useCurrency } from "../../../context/CurrencyContext"
 import { host } from "../../variables";
 
 export default function AdminOrders() {
 
   const [orders, setOrders] = useState([])
+  const { formatPrice } = useCurrency()
   const handleStatusChange = async (id, status) => {
     await fetch(`${host}/api/orders/${id}/status`, {
       method: "PUT",
@@ -26,7 +28,7 @@ export default function AdminOrders() {
       {orders.map(order => (
         <div key={order._id}>
           <h2>Customer: {order.customerName}</h2>
-          <p>Total price: ${order.totalPrice}</p>
+          <p>Total price: {formatPrice(order.totalPrice)}</p>
           <p>Status: {order.status}</p>
           <select className="admin-status" value={order.status} onChange={(e) => handleStatusChange(order._id, e.target.value)}>
             <option>Ordered</option>

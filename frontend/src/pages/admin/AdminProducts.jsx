@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useCurrency } from "../../../context/CurrencyContext"
 import { Link } from "react-router-dom";
 import { host } from "../../variables";
 
 export default function AdminProducts() {
 
   const [products, setProducts] = useState([])
+  const { formatPrice } = useCurrency()
   const handleDelete = async (id) => {
     await fetch(`${host}/api/products/${id}`, {
       method: "DELETE",
@@ -24,7 +26,7 @@ export default function AdminProducts() {
       {products.map(product => (
         <div className="admin-product-card" key={product._id}>
           <h2>{product.name}</h2>
-          <p>${product.price}</p>
+          <p>{formatPrice(product.price)}/hour</p>
           <div className="admin-product-btn-wrapper">
             <Link className="admin-product-link" to={`/admin/products/${product._id}`}>Edit</Link>
             <button className="admin-product-btn" onClick={() => handleDelete(product._id)}>Delete</button>

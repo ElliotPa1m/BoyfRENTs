@@ -27,7 +27,7 @@ export default function AdminLogin() {
     if (data.role === "admin") {
       navigate("/admin")
     } else {
-      navigate("/products")
+      navigate("/")
     }
   }
 

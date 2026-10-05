@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useCart } from "../../context/CartContext"
+import { useCurrency } from "../../context/CurrencyContext"
 import Navbar from "../components/Navbar";
 
 export default function CartPage() {
   
   const navigate = useNavigate()
   const {items, removeFromCart} = useCart()
+  const { formatPrice } = useCurrency()
 
   const handleCheckout = () => {
     const token = localStorage.getItem("token")
@@ -27,7 +29,7 @@ export default function CartPage() {
           <img className="detail-img" src={item.imageUrl} alt={item.name} />
           <div className="cart-item-info">
             <h2>{item.name}</h2>
-            <p>Price: ${item.price}/hour</p>
+            <p>Price: {formatPrice(item.price)}/hour</p>
             <button className="remove-from-cart-btn" onClick={() => removeFromCart(item.productId)}>Remove from cart</button>
           </div>
         </div>
