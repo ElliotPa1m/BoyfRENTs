@@ -9,7 +9,7 @@ export default function Navbar() {
         <nav className="navbar">
             <Link to="/"><img src={logo} alt="logo"/></Link>
             <Link className="cart-link" to="/cart">Cart</Link>
-            <select value={currency} onChange={e => setCurrency(e.target.value)}>
+            <select id="currency-dropdown" value={currency} onChange={e => setCurrency(e.target.value)}>
                 <option value="USD">USD</option>
                 <option value="SEK">SEK</option>
                 <option value="EUR">EUR</option>
