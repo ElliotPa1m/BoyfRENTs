@@ -62,6 +62,23 @@ body {
     border:none;
     border-radius: 8px;
     padding: 8px 16px;
+    margin-left: 1400px;
+    cursor: pointer;
+    font-family: "Playfair Display", serif;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+#currency-dropdown {
+    font-size: 1.2rem;
+    color: var(--highlight);
+    text-decoration: none;
+    background-color: var(--highlight);
+    color:white;
+    border:none;
+    border-radius: 8px;
+    padding: 8px 16px;
     cursor: pointer;
     font-family: "Playfair Display", serif;
     font-weight: 500;
