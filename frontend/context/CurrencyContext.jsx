@@ -9,7 +9,10 @@ export function CurrencyProvider({children}) {
 
     useEffect(() => {
         fetch(`${host}/api/currency/rates`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error("Something went wrong on the server")
+            return res.json()
+        })
         .then(data => setRates(data.rates || {}))
         .catch(err => console.error(err))
     }, [])
