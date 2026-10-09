@@ -1,23 +1,41 @@
-const BASE_URL = 'https://api.frankfurter.dev/v1'
+import { z } from 'zod'
+import { fetchJson } from '../lib/fetchJson.js'
 
-export async function getRates(base = 'USD', symbols = ['SEK', 'EUR', 'USD', 'IDR'])  {
+const BASE_URL = 'https://api.frankfurter.dev/v1'
+const CACHE_MS = Number(process.env.CURRENCY_CACHE_SECONDS ?? 21600) * 1000
+
+const cache = {}
+
+const FrankfurterRates = z.object({
+    amount: z.number(),
+    base: z.string(),
+    date: z.string(),
+    rates: z.record(z.string(), z.number().positive())
+})
+
+export async function getRates(base = 'USD', symbols = ['SEK', 'EUR', 'USD', 'IDR']) {
+    if (cache[base] && cache[base].expiresAt > Date.now()) {
+        return cache[base].value
+    }
     const url = new URL(`${BASE_URL}/latest`)
     url.searchParams.set('base', base)
     url.searchParams.set('symbols', symbols.join(','))
-    
-    try {
-        const response = await fetch(url)
-        if (!response.ok) throw new Error(`API error: ${response.status}`)
 
-        const data = await response.json()
-        
-        return {
-          base: data.base,
-          date: data.date,
-          rates: {...data.rates, [data.base]: 1}
-        }
-    } catch(err) {
-        console.error(err)
-        throw new Error('Something went wrong')
+    const data = await fetchJson(url)
+
+    const result = FrankfurterRates.safeParse(data);
+
+    if (!result.success) {
+        throw new Error(`Frankfurter responded with an unexpected format:\n${z.prettifyError(result.error)}`)
     }
+
+    const value = {
+        base: result.data.base,
+        date: result.data.date,
+        rates: { ...result.data.rates, [result.data.base]: 1 }
+    }
+
+    cache[base] = { value, expiresAt: Date.now() + CACHE_MS }
+
+    return value
 }

@@ -12,11 +12,7 @@ router.get('/rates', async (req, res) => {
         return res.status(400).json({error: 'Invalid currency'})
     }
 
-    try{
-        res.json(await getRates(base))
-    } catch (err) {
-        res.status(502).json({error: 'Could not fetch exchange rates'})
-    }
+    res.json(await getRates(base))
     
 })
 

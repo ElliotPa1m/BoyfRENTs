@@ -1,6 +1,6 @@
+import "dotenv/config"
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import { MongoClient, Db } from "mongodb";
 import dns from "node:dns";
 import productRoutes from "./routes/products.js"
@@ -10,7 +10,7 @@ import cartRoutes from "./routes/cart.js"
 import currencyRoutes from "./routes/currency.js"
 
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
-dotenv.config()
+dns.setDefaultResultOrder("ipv4first");
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -27,7 +27,10 @@ app.get("/api/ping", (req, res) => {
   res.json({ status: "ok" })
 })
 
-console.log(process.env.MONGO_URI)
+app.use((err, req, res, next) => {
+  console.error(`${req.method} ${req.originalUrl} failed: ${err.message}`)
+  res.status(500).json({ error: 'Something went wrong on the server' })
+})
 
 const client = new MongoClient(process.env.MONGO_URI) 
 
