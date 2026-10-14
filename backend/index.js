@@ -8,6 +8,7 @@ import orderRoutes from "./routes/orders.js"
 import authRoutes from "./routes/auth.js"
 import cartRoutes from "./routes/cart.js"
 import currencyRoutes from "./routes/currency.js"
+import adminRoutes from "./routes/admin.js"
 
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 dns.setDefaultResultOrder("ipv4first");
@@ -22,6 +23,7 @@ app.use("/api/orders", orderRoutes)
 app.use("/api/auth", authRoutes)
 app.use("/api/cart", cartRoutes)
 app.use("/api/currency", currencyRoutes)
+app.use("/api/admin", adminRoutes)
 
 app.get("/api/ping", (req, res) => {
   res.json({ status: "ok" })
