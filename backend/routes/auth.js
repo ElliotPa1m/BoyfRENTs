@@ -6,9 +6,9 @@ import jwt from "jsonwebtoken";
 const router = express.Router()
 
 router.post("/register", async (req, res) => {
-    const {username, password, role} = req.body
+    const {username, password} = req.body
     const hashedPassword = await bcrypt.hash(password, 10)
-    const user = await db.collection("users").insertOne({ username, password: hashedPassword, role })
+    const user = await db.collection("users").insertOne({ username, password: hashedPassword, role: "user" })
     res.json(user)
 })
 

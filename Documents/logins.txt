@@ -1,7 +1,0 @@
-user login:
-name: elliotuser
-password:1234
-
-admin login:
-name:admin
-password:admin123
