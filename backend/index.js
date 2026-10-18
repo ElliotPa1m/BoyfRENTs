@@ -9,6 +9,8 @@ import authRoutes from "./routes/auth.js"
 import cartRoutes from "./routes/cart.js"
 import currencyRoutes from "./routes/currency.js"
 import adminRoutes from "./routes/admin.js"
+import algoliaAdminRoutes from "./routes/algoliaAdmin.js"
+import searchRoutes from "./routes/search.js"
 
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 dns.setDefaultResultOrder("ipv4first");
@@ -24,6 +26,8 @@ app.use("/api/auth", authRoutes)
 app.use("/api/cart", cartRoutes)
 app.use("/api/currency", currencyRoutes)
 app.use("/api/admin", adminRoutes)
+app.use("/api/admin/algolia", algoliaAdminRoutes)
+app.use("/api/search", searchRoutes)
 
 app.get("/api/ping", (req, res) => {
   res.json({ status: "ok" })

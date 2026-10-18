@@ -10,13 +10,35 @@ export default function AdminProducts() {
   const [error, setError] = useState("")
   const [importing, setImporting] = useState(false)
   const { formatPrice } = useCurrency()
-  
+  const [warning, setWarning] = useState("")
+  const [message, setMessage] = useState("")
+
   const handleDelete = async (id) => {
-    await fetch(`${host}/api/products/${id}`, {
-      method: "DELETE",
-      headers: {Authorization: `Bearer ${localStorage.getItem("token")}`}
-    })
-    setProducts(products.filter(p => p._id !== id))
+    setError("")
+    setWarning("")
+    setMessage("")
+
+    try {
+      const res = await fetch(`${host}/api/products/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || data.message || "Could not delete the product")
+        return
+      }
+
+      setProducts(products.filter(p => p._id !== id))
+
+      if (data.searchIndexUpdated === false) {
+        setWarning("The product was deleted but the search index was not updated.")
+      }
+    } catch (err) {
+      console.error(err)
+      setError("Could not reach the server")
+    }
   }
 
   const loadProducts = () => {
@@ -33,11 +55,13 @@ export default function AdminProducts() {
     setImporting(true)
     setError("")
     setReport(null)
+    setWarning("")
+    setMessage("")
 
-    try{
+    try {
       const res = await fetch(`${host}/api/admin/products/import/${format}`, {
         method: "POST",
-        headers: {Authorization: `Bearer ${localStorage.getItem("token")}`}
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       })
       const data = await res.json()
 
@@ -55,18 +79,49 @@ export default function AdminProducts() {
     }
   }
 
+  const handleReindex = async () => {
+    setImporting(true)
+    setError("")
+    setReport(null)
+    setWarning("")
+    setMessage("")
+
+    try {
+      const res = await fetch(`${host}/api/admin/algolia/reindex`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || data.message || "Reindex failed")
+        return
+      }
+      setMessage(`Search index updated with ${data.indexed} products`)
+    } catch (err) {
+      console.error(err)
+      setError("Could not reach the server")
+    } finally {
+      setImporting(false)
+    }
+  }
+
   return (
     <div className="admin-product-list">
-      <button className="admin-product-btn" onClick={() => handleImport("csv")} disabled={importing}>Import from CSV</button> 
+      <button className="admin-product-btn" onClick={() => handleImport("csv")} disabled={importing}>Import from CSV</button>
       <button className="admin-product-btn" onClick={() => handleImport("xml")} disabled={importing}>Import from XML</button>
-      
+      <button className="admin-product-btn" onClick={handleReindex} disabled={importing}>Reindex</button>
+
       {error && <p>{error}</p>}
+      {warning && <p>{warning}</p>}
+      {message && <p>{message}</p>}
 
       {report && (
         <div>
           <p>New: {report.created}</p>
           <p>Updated: {report.updated}</p>
           <p>Skipped: {report.skipped.length}</p>
+          {report.searchIndexUpdated === false && <p>Search index was not updated.</p>}
           {report.skipped.map(item => (
             <p key={item.sku}>{item.sku}: {item.reason}</p>
           ))}
