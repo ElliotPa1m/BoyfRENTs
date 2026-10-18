@@ -3,6 +3,7 @@ import express from "express"
 import { getSupplierCatalog } from '../integrations/supplierAdapter.js';
 import { protect, adminOnly } from "../middleware/authMiddleware.js";
 import { db } from "../index.js";
+import { indexProducts } from '../integrations/searchAdapter.js';
 
 const SupplierProduct = z.object({
   sku: z.string().min(1),
@@ -67,7 +68,17 @@ router.post('/products/import/:format', protect, adminOnly, async (req, res) => 
     return res.status(500).json({ error: 'Could not save the products to the database' })
   }
 
-  res.json({ format, total: candidates.length, created, updated, skipped });
+  const skus = valid.map(p => p.sku)
+  let searchIndexUpdated = true
+  try {
+    const saved = await db.collection("products").find({sku: {$in: skus}}).toArray()
+    await indexProducts(saved)
+  } catch (err) {
+    console.error(err)
+    searchIndexUpdated = false
+  }
+
+  res.json({ format, total: candidates.length, created, updated, skipped, searchIndexUpdated });
 })
 
 export default router;
