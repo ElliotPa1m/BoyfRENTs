@@ -38,8 +38,20 @@ export function CartProvider({children}) {
 
     }
 
+    const clearCart = async () => {
+        try {
+            await fetch(`${host}/api/cart`, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}`},
+            body: JSON.stringify({items: []})
+        })
+        } finally {
+            setItems([])
+        }
+    }
+
     return (
-        <CartContext.Provider value={{items, addToCart, removeFromCart}}>
+        <CartContext.Provider value={{items, addToCart, removeFromCart, clearCart}}>
             {children}
         </CartContext.Provider>
     )

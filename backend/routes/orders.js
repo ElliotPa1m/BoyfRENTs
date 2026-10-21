@@ -5,10 +5,19 @@ import { protect, adminOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router()
 
-router.post("/", async (req, res) => {
-    const orderedProduct = req.body
-    const result = await db.collection("orders").insertOne(orderedProduct)
-    res.json({...orderedProduct, _id: result.insertedId})
+router.get("/by-session", async (req, res) => {
+    const sessionId = req.query.session_id
+
+    if (typeof sessionId !== "string" || !sessionId.startsWith("cs_")) {
+        return res.status(400).json({error: "Invalid session id"})
+    }
+
+    const order = await db.collection("orders").findOne({stripeSessionId: sessionId})
+    if (!order) {
+        return res.status(404).json({error: "Order not found"})
+    }
+
+    res.json({status: order.status, totalPrice: order.totalPrice, items: order.items})
 })
 
 router.get("/", protect, adminOnly, async (req, res) => {

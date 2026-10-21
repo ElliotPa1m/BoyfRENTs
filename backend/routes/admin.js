@@ -53,7 +53,7 @@ router.post('/products/import/:format', protect, adminOnly, async (req, res) => 
     for (const product of valid) {
       const result = await db.collection("products").updateOne(
         { sku: product.sku },
-        { $set: product },
+        { $set: product, $setOnInsert: { stock: 10 } },
         { upsert: true }
       )
 

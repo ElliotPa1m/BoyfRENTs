@@ -11,6 +11,8 @@ import currencyRoutes from "./routes/currency.js"
 import adminRoutes from "./routes/admin.js"
 import algoliaAdminRoutes from "./routes/algoliaAdmin.js"
 import searchRoutes from "./routes/search.js"
+import checkoutRoutes from "./routes/checkout.js"
+import stripeWebhookRoutes from "./routes/stripeWebhook.js"
 
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 dns.setDefaultResultOrder("ipv4first");
@@ -19,7 +21,9 @@ const app = express()
 const PORT = process.env.PORT || 5000
 
 app.use(cors())
+app.use("/api/stripe/webhook", stripeWebhookRoutes)
 app.use(express.json())
+app.use("/api/checkout", checkoutRoutes)
 app.use("/api/products", productRoutes)
 app.use("/api/orders", orderRoutes)
 app.use("/api/auth", authRoutes)

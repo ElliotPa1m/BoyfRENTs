@@ -31,7 +31,6 @@ export default function AdminOrders() {
           <p>Total price: {formatPrice(order.totalPrice)}</p>
           <p>Status: {order.status}</p>
           <select className="admin-status" value={order.status} onChange={(e) => handleStatusChange(order._id, e.target.value)}>
-            <option>Ordered</option>
             <option>Processing</option>
             <option>Delivered</option>
             <option>Refunded</option>

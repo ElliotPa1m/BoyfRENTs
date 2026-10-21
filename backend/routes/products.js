@@ -20,6 +20,7 @@ router.post("/", protect, adminOnly, async (req, res) => {
     )
     const next = last ? Number(last.sku.slice(3)) + 1 : 1
     newProduct.sku = "BF-" + String(next).padStart(3, "0")
+    newProduct.stock = 10
     
     const result = await db.collection("products").insertOne(newProduct)
 

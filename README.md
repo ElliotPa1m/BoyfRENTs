@@ -18,11 +18,18 @@
 
 - Först och främst måste man köra en Reindex. Skriv sedan något i sökrutan högst upp på produktsidan. Sökningen tillåter stavfel t.ex. skriver man Anan hittar den Anna. Söker man på Anna får man också upp Hanna (som skiljer sig med en bokstav) och Lex (som har ordet "wanna" i description)
 
+- Skapa ett gratis Stripe konto i testläge och lägg STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET (whsec_-värdet som stripe listen skriver ut) i backend .env filen samt CLIENT_URL (http://localhost:5173) i frontend .env filen. Man behöver Stripe CLI installerat, och stripe login körs första gången
+
+- Använd kortet 4242 4242 4242 4242 (med valfritt framtida utgångsdatum och valfri tre siffrig kod), se till att ha tripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.expired --forward-to localhost:5000/api/stripe/webhook igång lokalt med whsec_-värdet i .env filen och gå igenom beställningsflödet (add to cart, checkout, fyll i uppgifter, pay, skriv in kort uppgifterna i Stripe)
+
 ## Mina val för Labb 1:
 Jag valde att skippa ean och uppdaterad från leverantören då dom inte var särskilt relevanta för just min webshop. Variants sparas som en lista och age har fått gränser från 18 till 65, 18–65 är en regel för min shop, och leverantörens åldrar ligger mellan 19 och 64 så att ingen produkt faller bort. Jag valde också att lämna mina gamla "produkter" helt orörda istället för att ändra deras kategorier för att matcha dom från leverantören för att inte behöva ändra saker och ting och riskera att andra saker i koden börjar strula eller sluta fungera som dom ska. Priset och kategorin tas rakt av, och produkter som inte klarar valideringen hoppas över med en orsak i rapporten.
 
 ## Mina val för Labb 2:
 Jag valde att ge mina produkter som jag hade i databasen ett artikelnummer (sku) BF-001 och uppåt och nya produkter får nästa lediga nummer automatiskt (i detta fallet BF-013 och nästa efter det får BF-014 osv.). Produktens MongoDB id som productId så att sökträffarna kan länka till produktsidan och läggas till i varukorgen. Jag valde att göra sök funktionen på ett sånt sätt att sökningen används bara när något är skrivet i sökfältet, är fältet tomt visas den vanliga produktlistan från databasen, på grund av det så funkar produktsidan oavsett om Algolia är nere, om Algolia inte svarar visar sökningen ett begripligt felmeddelande. Sidorna räknas från 1 istället för Algolias 0 genom att adaptern översätter, jag satte en standard storlek på 12 per sida och taket är 50. Jag valde att spara databasen först så att även om Algolia inte svarar så sparas ändå produkten samt att admin får en varning om att det inte sparats i indexet, för att få ikapp indexet kan man köra en reindex. Jag har också gjort så att sku inte kan ändras när man klickat på Edit på en produkt så att man inte skapar dubbletter när man sparar produkten igen. Sist men inte minst gjorde jag så att indexet uppdateras automatiskt när en ny produkt skapas, ändras, tas bort eller importeras
+
+## Mina val för Labb 3:
+Jag valde att använda Stripes hosted checkout då det lät smidigare, jag valde att priserna debiterades i USD (cents) istället för kronor då min sida var byggd med USD i åtanke från början. Jag satte in stock på mina produkter och valde att "stock" var antalet timmar som "produkten hade skrivit på kontrakt med företaget" (startsaldot låg på 10 på alla). Jag implementerade att orderstatusen gick från pending när ordern skapas, paid när webhooken bekräftat att betalningen har gått igenom en gång och cancelled när sessionen har löpt ut efter 30 minuter utan betalning. Priset räknas på servern från databasen, React skickar bara produkt och antal, webhooken verifierar signaturen så att även om samma händelse kommer flera gånger så blir ordern bara betald en gång och saldot minskar en gång.
 
 ## REFLEKTIONEN:
 
@@ -39,7 +46,22 @@ Jag valde att ge mina produkter som jag hade i databasen ett artikelnummer (sku)
 
 ### Labb 2:
 2.1 Jag använder en SDK-integration (algoliasearch) som pratar REST med Algolia och den passar för att det är färdig kod för sökanrop, indexering och nycklar så jag slipper skriva HTTP anropen själv.
+
 2.2 Jag använder Express av samma anledning som med CSV/XML integrationen, admin nyckeln får inte hamna i webbläsaren då den kan skriva och ta bort information. Sök nyckeln går också via mitt API så att jag kan validera page och pageSize samt sätta ett tak och svara i shoppens format.
+
 2.3 Det är bättre att integrera den här söktjänsten än att bygga den själv för att fixa stavfeltolerans, rankning och snabb sökning av mycket data är svårt och om jag skulle gjort det själv skulle jag inte bara behöva bygga en egen sökmotor utan också ett eget index.
+
 2.4 Om Algolia skulle vara nere och man söker så får man ett felmeddelande, produktlistan funkar fortfarande för den läses in från databasen, ändra, ta bort och skapa fungerar och ger en varning till admin att det inte indexerats och sen när Algolia är uppe igen så funkar reindex knappen så allt är syncat igen.
+
 2.5 Risken med Algolia kan vara prisändringar för gratisplanen har en cap på funktioner. En viss GDPR risk finns också med denna shoppen då det handlar om namn/beskrivning/ålder om det hade varit riktiga personer så hade deras personuppgifter behövts skickas till en tredje part. Jag hade behövt veta var datan lagras och skriva avtal med leverantören och Algolia kan ändra villkor eller APIet (SDK version 4 och 5 ser annorlunda ut).
+
+### Labb 3:
+3.1 Jag använde en SDK-integration (Stripe) med en redirect till Stripes sida och en webhook. Den passar för att det är färdig och etablerad kod för betalningar på det sättet hanteras inte kortuppgifterna av min server och webhooken behövs då betalningen bekräftas i efterhand, på det sättet är det inte webbläsaren utan servern som markerar orders som betalda.
+
+3.2 Jag använde Express för att det finns hemliga nycklar som inte får hamna i webbläsaren och att priset räknas från servern och inte frontend.
+
+3.3 Jag valde att integrera för kortbetalningar kräver PCI-hantering och säkerhet som är svårt att återskapa snabbt/lätt. Det hjälper också med att hantera kortuppgifter säkert, bankkopplingar, 3-D Secure (extra godkännande) och bedrägeriskydd.
+
+3.4 Om Stripe är nere skickar jag ett 502 fel meddelande som ger ett begripligt svar på vad som är fel och ordern förblir pending tills den blir betald eller sessionen går ut och blir cancelled.
+
+3.5 Riskerna med Stripe kan vara avgifter mellan Stripe och företaget, ändrade vilkor från Stripe, att ha personuppgifter hos en tredje part och att varje köp kostar en avgift per transaktion.
