@@ -28,6 +28,7 @@ export default function ProductDetailsPage() {
           <h1>{product.name}</h1>
           <p>Age: {product.age}</p>
           <p>{product.description}</p>
+          <p>Available hours: {product.stock}</p>
           <p>{formatPrice(product.price)}/hour</p>
           <p>Category: {product.category}</p>
           <button className="details-add-to-cart-button" onClick={() => addToCart(product)}>Add to cart</button>
