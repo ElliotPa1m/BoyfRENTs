@@ -22,6 +22,8 @@
 
 - Använd kortet 4242 4242 4242 4242 (med valfritt framtida utgångsdatum och valfri tre siffrig kod), se till att ha tripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.expired --forward-to localhost:5000/api/stripe/webhook igång lokalt med whsec_-värdet i .env filen och gå igenom beställningsflödet (add to cart, checkout, fyll i uppgifter, pay, skriv in kort uppgifterna i Stripe)
 
+- För att testa bilduppladdningen, skapa ett gratis Supabase-projekt med en publik bucket, och lägger SUPABASE_URL (https://<id>.supabase.co), SUPABASE_SECRET_KEY och SUPABASE_BUCKET i .env filen, logga in som admin, skapa eller öppna en produkt med Edit knappen, välj en bild och ladda upp den.
+
 ## Mina val för Labb 1:
 Jag valde att skippa ean och uppdaterad från leverantören då dom inte var särskilt relevanta för just min webshop. Variants sparas som en lista och age har fått gränser från 18 till 65, 18–65 är en regel för min shop, och leverantörens åldrar ligger mellan 19 och 64 så att ingen produkt faller bort. Jag valde också att lämna mina gamla "produkter" helt orörda istället för att ändra deras kategorier för att matcha dom från leverantören för att inte behöva ändra saker och ting och riskera att andra saker i koden börjar strula eller sluta fungera som dom ska. Priset och kategorin tas rakt av, och produkter som inte klarar valideringen hoppas över med en orsak i rapporten.
 
@@ -30,6 +32,9 @@ Jag valde att ge mina produkter som jag hade i databasen ett artikelnummer (sku)
 
 ## Mina val för Labb 3:
 Jag valde att använda Stripes hosted checkout då det lät smidigare, jag valde att priserna debiterades i USD (cents) istället för kronor då min sida var byggd med USD i åtanke från början. Jag satte in stock på mina produkter och valde att "stock" var antalet timmar som "produkten hade skrivit på kontrakt med företaget" (startsaldot låg på 10 på alla). Jag implementerade att orderstatusen gick från pending när ordern skapas, paid när webhooken bekräftat att betalningen har gått igenom en gång och cancelled när sessionen har löpt ut efter 30 minuter utan betalning. Priset räknas på servern från databasen, React skickar bara produkt och antal, webhooken verifierar signaturen så att även om samma händelse kommer flera gånger så blir ordern bara betald en gång och saldot minskar en gång.
+
+## Mina val för Labb 4:
+Jag valde att begränsa filerna till JPEG och PNG samt max 4MB både i servern och i bucketen. Varje bild får en ny unik sökväg med sku, slumpmässigt id och en ändelse, inte filnamnet från admin och en befintlig fil skrivs aldrig över. Både sökvägen imagePath och adressen imageUrl sparas på produkten, jag återanvände imageUrl så att shoppen visar den nya bilden överallt utan att jag behövde ändra i frontend. För säkerhetsskull så sparas den nyuppladdade bilden först sen tas den gamla bort så att en misslyckad uppladdning inte gör att en produkt inte har en bild. Bilduppladdningen ligger på redigeringssidan istället för skapelsesidan då det inte finns en sku eller imagePath förens efter produkten har skapats och efter produkten har skapats så tas admin till redigeringssidan direkt så dom kan ladda upp en bild. Sökindexet i Algolia uppdateras också när en bild byts ut med samma varning som innan.
 
 ## REFLEKTIONEN:
 
@@ -65,3 +70,14 @@ Jag valde att använda Stripes hosted checkout då det lät smidigare, jag valde
 3.4 Om Stripe är nere skickar jag ett 502 fel meddelande som ger ett begripligt svar på vad som är fel och ordern förblir pending tills den blir betald eller sessionen går ut och blir cancelled.
 
 3.5 Riskerna med Stripe kan vara avgifter mellan Stripe och företaget, ändrade vilkor från Stripe, att ha personuppgifter hos en tredje part och att varje köp kostar en avgift per transaktion.
+
+### Labb 4:
+4.1 Jag använde en SDK-integration (Supabase) mot Supabase Storage via REST där servern tar emot filen och laddar upp den, bilderna visas sen direkt från Supabase.
+
+4.2 Jag använde Express för att den hemliga nyckeln kan skriva och ta bort och den får inte hamna i webbläsaren. Servern kan dessutom validera filtypen och storleken innan något laddas upp.
+
+4.3  Jag valde att integrera för att lagra, visa och cacha bilder globalt samt hantera backup är svårt och en egen lösning skulle kräva en filserver, lagringsutrymme och snabb leverans.
+
+4.4 Om Supabase är nere får admin ett begripligt meddelande (502), produkten behåller den gamla bilden och shoppen visar bilderna som redan ligger i bucketen om lagringen svarar, annars en "trasig" bild.
+
+4.5 Risker med detta är bland annat att gratisplanen har begränsningar (1 GB lagring totalt, 50MB per fil), och gratisprojekt pausas efter en veckas inaktivitet (Render och Supabase), vilket gör att bilderna inte går att nå förrän projektet väcks. Villkoren kan ändras och bilder på personer är personuppgifter som hamnar hos en tredje part, så man behöver veta var datan lagras och ha ett avtal med leverantören.
