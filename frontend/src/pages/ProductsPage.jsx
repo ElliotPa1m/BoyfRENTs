@@ -112,8 +112,11 @@ export default function ProductsPage() {
   return (
     <div>
       <Navbar />
-      
-      <input className="search-bar" type="text" placeholder="Search" value={query} onChange={(e) => {setQuery(e.target.value); setPage(1)}}/>
+
+      <div className="search-wrapper">
+        <i className="fa-solid fa-magnifying-glass search-icon"></i>
+        <input className="search-bar" type="text" placeholder="Search" value={query} onChange={(e) => { setQuery(e.target.value); setPage(1) }} />
+      </div>
 
       {searchError && <p>{searchError}</p>}
 
@@ -142,7 +145,7 @@ export default function ProductsPage() {
         <div className="product-grid">
           {visibleProducts.map(product => (
             <div className="product-card" key={product._id}>
-              <img src={product.imageUrl} alt={product.name}/>
+              <img src={product.imageUrl} alt={product.name} />
               <h2>{product.name}</h2>
               <p>{formatPrice(product.price)}/hour</p>
               <div className="card-buttons">
