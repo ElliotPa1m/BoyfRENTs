@@ -12,7 +12,7 @@ function getStripe() {
     return stripe
 }
 
-export async function createHostedCheckout(orderId, items) {
+export async function createHostedCheckout(orderId, items, shipping) {
 
     const client = getStripe()
     const clientUrl = process.env.CLIENT_URL
@@ -21,16 +21,32 @@ export async function createHostedCheckout(orderId, items) {
         throw new Error("CLIENT_URL is missing in .env")
     }
 
-    const session = await client.checkout.sessions.create({
-        mode: "payment",
-        line_items: items.map(item => ({
-            quantity: item.quantity,
+    // 1. bygg raderna för produkterna
+    const lineItems = items.map(item => ({
+        quantity: item.quantity,
+        price_data: {
+            currency: "usd",
+            unit_amount: Math.round(item.price * 100),
+            product_data: { name: item.name }
+        }
+    }))
+
+    // 2. lägg till en rad för frakten (bara om den kostar något)
+    if (shipping && shipping.price > 0) {
+        lineItems.push({
+            quantity: 1,
             price_data: {
                 currency: "usd",
-                unit_amount: Math.round(item.price * 100),
-                product_data: { name: item.name }
+                unit_amount: Math.round(shipping.price * 100),
+                product_data: { name: shipping.name }
             }
-        })),
+        })
+    }
+
+    // 3. skapa sessionen med hela listan
+    const session = await client.checkout.sessions.create({
+        mode: "payment",
+        line_items: lineItems,
         client_reference_id: orderId,
         success_url: `${clientUrl}/confirmation?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${clientUrl}/cart`,

@@ -1,5 +1,5 @@
 ## KOM IGÅNG:
-<!-- länk till deployad shoppen -->
+https://boyf-ren-ts.vercel.app/
 
 ### Steg för att starta klienten och servern lokalt:
 1. Öppna `frontend/src/variables.js` och byt vilken `host` som är aktiv: kommentera bort raden med Render-adressen och avkommentera raden med `localhost`.
@@ -11,6 +11,8 @@
 - Kund: user1
 - Lösenord: 123
 
+- Admin kontot för läraren står i inlämningskommentaren.
+
 ### Nycklar, importtest, söktest
 - Kopiera .env.example till .env och fyll i värdena. SUPPLIER_API_KEY är demonyckeln från leverantörens dokumentation. Skapa ett gratis konto på Algolia och hämta App ID, admin-nyckel och search-only-nyckel från dashboarden och sätt in dom i rätt variabel i .env filen (mall i .env.example), INDEX_NAME kan fyllas med valfritt namn. Logga in som admin och gå in på Products och klicka på reindex knappen för att manuellt uppdatera indexet (den knappen använder en POST till /api/admin/algolia/reindex)
 
@@ -18,11 +20,13 @@
 
 - Först och främst måste man köra en Reindex. Skriv sedan något i sökrutan högst upp på produktsidan. Sökningen tillåter stavfel t.ex. skriver man Anan hittar den Anna. Söker man på Anna får man också upp Hanna (som skiljer sig med en bokstav) och Lex (som har ordet "wanna" i description)
 
-- Skapa ett gratis Stripe konto i testläge och lägg STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET (whsec_-värdet som stripe listen skriver ut) i backend .env filen samt CLIENT_URL (http://localhost:5173) i frontend .env filen. Man behöver Stripe CLI installerat, och stripe login körs första gången
+- Skapa ett gratis Stripe konto i testläge och lägg STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET (whsec_-värdet som stripe listen skriver ut) samt CLIENT_URL (http://localhost:5173) i backend .env filen. Man behöver Stripe CLI installerat, och stripe login körs första gången
 
-- Använd kortet 4242 4242 4242 4242 (med valfritt framtida utgångsdatum och valfri tre siffrig kod), se till att ha tripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.expired --forward-to localhost:5000/api/stripe/webhook igång lokalt med whsec_-värdet i .env filen och gå igenom beställningsflödet (add to cart, checkout, fyll i uppgifter, pay, skriv in kort uppgifterna i Stripe)
+- Använd kortet 4242 4242 4242 4242 (med valfritt framtida utgångsdatum och valfri tre siffrig kod), se till att ha stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.expired --forward-to localhost:5000/api/stripe/webhook igång lokalt med whsec_-värdet i .env filen och gå igenom beställningsflödet (add to cart, checkout, fyll i uppgifter, pay, skriv in kort uppgifterna i Stripe)
 
 - För att testa bilduppladdningen, skapa ett gratis Supabase-projekt med en publik bucket, och lägger SUPABASE_URL (https://<id>.supabase.co), SUPABASE_SECRET_KEY och SUPABASE_BUCKET i .env filen, logga in som admin, skapa eller öppna en produkt med Edit knappen, välj en bild och ladda upp den.
+
+- Skapa ett konto i PostNords utvecklarportal (Customer Plan), skapa en sandlådenyckel och lägg `POSTNORD_API_KEY`,`SHOP_ADDRESS` och `SHOP_POSTAL_CODE` i .env filen (sandlådans testvärden är Testvägen 3 och 17173)
 
 ## Mina val för Labb 1:
 Jag valde att skippa ean och uppdaterad från leverantören då dom inte var särskilt relevanta för just min webshop. Variants sparas som en lista och age har fått gränser från 18 till 65, 18–65 är en regel för min shop, och leverantörens åldrar ligger mellan 19 och 64 så att ingen produkt faller bort. Jag valde också att lämna mina gamla "produkter" helt orörda istället för att ändra deras kategorier för att matcha dom från leverantören för att inte behöva ändra saker och ting och riskera att andra saker i koden börjar strula eller sluta fungera som dom ska. Priset och kategorin tas rakt av, och produkter som inte klarar valideringen hoppas över med en orsak i rapporten.
@@ -36,48 +40,71 @@ Jag valde att använda Stripes hosted checkout då det lät smidigare, jag valde
 ## Mina val för Labb 4:
 Jag valde att begränsa filerna till JPEG och PNG samt max 4MB både i servern och i bucketen. Varje bild får en ny unik sökväg med sku, slumpmässigt id och en ändelse, inte filnamnet från admin och en befintlig fil skrivs aldrig över. Både sökvägen imagePath och adressen imageUrl sparas på produkten, jag återanvände imageUrl så att shoppen visar den nya bilden överallt utan att jag behövde ändra i frontend. För säkerhetsskull så sparas den nyuppladdade bilden först sen tas den gamla bort så att en misslyckad uppladdning inte gör att en produkt inte har en bild. Bilduppladdningen ligger på redigeringssidan istället för skapelsesidan då det inte finns en sku eller imagePath förens efter produkten har skapats och efter produkten har skapats så tas admin till redigeringssidan direkt så dom kan ladda upp en bild. Sökindexet i Algolia uppdateras också när en bild byts ut med samma varning som innan.
 
+## Mina val för Labb 5:
+Jag valde att använda Claude i webbläsaren för denna labben. Priserna är i USD så jag satte 5 dollar för ombudsleverans och 10 dollar för hemleverans samt fri frakt över 100 dollar. Fraktpriset räknas på servern (/prices för att visa det i kassan och i betalningen), ombudet kontrolleras mot PostNord vid betalningen, frakten sparas i egna fält på ordern och blir en egen rad i Stripe (inte i items dock för att saldot inte ska påverkas). Leveranstiden är en upplysning som inte stoppar kassan och ombudet väljs i en rullgardinsmeny.
+
+## Labb 5: Hur jag använde AI för ombud och leveranstid:
+- Eftersom jag använde Claude i webbläsaren så kunde inte den läsa filerna i projektet utan jag fick klipp och klistra de filerna som Claude behövde. Jag klistrade dock aldrig in API nyckeln och jag tog bort apikey= ur alla URLer jag visade Claude. 
+- Vad gäller prompter så började jag denna labben med att skicka Labb 5 PDF filen samt kod mallarna från exempelkoden (shippingAdapter, checkout och shipping), jag testade anropen från PostNord och skickade svaren samt portalens testverktyg och frågor som jag hade samt att jag bad Claude förtydliga vissa saker. 
+- Claude föreslog också med hjälp av Labb 5 PDFen en adapter med ett Zod-schema, en funktion (i `shippingAdapter.js`) för leveranstid anropas i `routes/shipping.js`, en prislista på servern, en utökning av kassan (ombudet kontrolleras, frakten räknas om på servern, sparas på ordern och blir en egen rad på Stripe) samt kassan i React.
+- Vad som skilde sig från PostNords dokumentation och hur jag kontrollerade det. Adressen som var med i exempelkoden fungerade medan en tredjepartsbeskrivning som Claude hittade gav en annan, äldre sökväg. Jag testade mot min egen sandlådenyckel och hittade rätt adress på det sättet. I mitt första test valde jag fel leverans sätt, jag valde `locationtoaddress` istället för `addresstoaddress`, när jag skickade svaret till Claude påpekade Claude att det anropet räknar från en depå och inte från ett postnummer, när Claude hade påpekat det så hittade jag tillslut `addresstoaddress` och kunde testa rätt. Portalens exempel visade datum från 2024 men det riktiga räknar på dagens datum. 
+- Jag jämförde adresserna, parametrarna och fälten i svaret med PostNords API-referens i portalen, och de stämde med det jag använde i koden. 
+- Leveranstidssvaret är en lista på ca 16 tjänster och några saknar vissa saker som `estimatedTimeOfArrival` det har ett error meddelande istället. Ett schema som kräver fältet på alla, eller en kod som tar första elementet hade gått fel så schemat tillåter att fält saknas och koden väljer tjänsten via `basicServiceCode` samt att vissa fält i ombudssvaret kan vara null så schemat tillåter det också. Om ett postnummer inte finns ger PostNord en 400 kod och Claude valde att tolka det som en tom lista (ombud) respektive ingen leveranstid. När jag återanvände ombudsfunktionen för leveranstiden så råkade jag kopiera fel adress och fel schema först, Zod upptäkte det direkt istället för att ge `undefined` senare. Jag testade i portalen och jämförde svaret med mina resultat från koden och rättade koden efter. 
+- Jag kontrollerade tjänstekoderna i svaret från PostNord, 17 är “PostNord Home” och 19 är “PostNord Service Point”. 
+
 ## REFLEKTIONEN:
 
 ### Labb 1: 
-1.1 Jag använder en fil-integration från leverantörens REST-API (csv eller xml filer) och tolkar den eftersom katalogen är stor och inte ändras så ofta så är det lättare och mer praktiskt att hämta allt istället för produkt för produkt
+1.1 Jag använder en fil-integration från leverantörens REST-API (csv eller xml filer) och tolkar den eftersom katalogen är stor och inte ändras så ofta så är det lättare och mer praktiskt att hämta allt istället för produkt för produkt.
 
-1.2 Jag använder Express för att X-Api-Key och leverantörens format inte ska hamna i frontend
+1.2 Jag använder Express för att X-Api-Key och leverantörens format inte ska hamna i frontend.
 
-1.3 Om man skulle bygga det själv skulle jag behöva hosta produktdatan, hålla den uppdaterad och fixa lagersaldot själv, det är lättare att outsource:a
+1.3 Om man skulle bygga det själv skulle jag behöva hosta produktdatan, hålla den uppdaterad och fixa lagersaldot själv, det är lättare att outsource:a.
 
 1.4 Om leverantören är nere får vi ett begripligt felmeddelande men shoppen fortsätter att fungera med dom produkterna som redan finns i databasen. Fel nyckel ger 502 med ett meddelande i admin, och om backend är avstängd visar admin "Could not reach the server".
 
 1.5 Risker som kommer med ett externt API är bland annat att leverantören kan ändra filformat, vår rate limit på 10 anrop och att jag är beroende av leverantören. Filens kolumner kan också ändras. Det är därför varje produkt valideras innan den sparas.
 
 ### Labb 2:
-2.1 Jag använder en SDK-integration (algoliasearch) som pratar REST med Algolia och den passar för att det är färdig kod för sökanrop, indexering och nycklar så jag slipper skriva HTTP anropen själv.
+2.1 Jag använder en SDK-integration (algoliasearch) som pratar REST med Algolia, den passar för att det är färdig kod för sökanrop, indexering och nycklar så jag slipper skriva HTTP anropen själv.
 
-2.2 Jag använder Express av samma anledning som med CSV/XML integrationen, admin nyckeln får inte hamna i webbläsaren då den kan skriva och ta bort information. Sök nyckeln går också via mitt API så att jag kan validera page och pageSize samt sätta ett tak och svara i shoppens format.
+2.2 Admin-nyckeln kan skriva och ta bort, så den får inte hamna i webbläsaren. Sök går också via mitt API, så att jag kan validera page och pageSize och svara i shoppens format.
 
-2.3 Det är bättre att integrera den här söktjänsten än att bygga den själv för att fixa stavfeltolerans, rankning och snabb sökning av mycket data är svårt och om jag skulle gjort det själv skulle jag inte bara behöva bygga en egen sökmotor utan också ett eget index.
+2.3 Stavfelstolerans, rankning och snabb sökning är svårt, och egen sökning hade krävt en egen sökmotor och eget index.
 
-2.4 Om Algolia skulle vara nere och man söker så får man ett felmeddelande, produktlistan funkar fortfarande för den läses in från databasen, ändra, ta bort och skapa fungerar och ger en varning till admin att det inte indexerats och sen när Algolia är uppe igen så funkar reindex knappen så allt är syncat igen.
+2.4 Är Algolia nere visar sökningen ett felmeddelande, produktlistan läses från databasen och fungerar, och skapa/ändra/ta bort sparar ändå och ger admin en varning. Reindex tar sedan indexet ikapp.
 
-2.5 Risken med Algolia kan vara prisändringar för gratisplanen har en cap på funktioner. En viss GDPR risk finns också med denna shoppen då det handlar om namn/beskrivning/ålder om det hade varit riktiga personer så hade deras personuppgifter behövts skickas till en tredje part. Jag hade behövt veta var datan lagras och skriva avtal med leverantören och Algolia kan ändra villkor eller APIet (SDK version 4 och 5 ser annorlunda ut).
+2.5 Gratisplanen har gränser och villkor kan ändras (SDK 4 och 5 ser olika ut). Skulle datan vara riktiga personer är namn och ålder personuppgifter hos en tredje part, och då krävs avtal och koll på var datan lagras.
 
 ### Labb 3:
-3.1 Jag använde en SDK-integration (Stripe) med en redirect till Stripes sida och en webhook. Den passar för att det är färdig och etablerad kod för betalningar på det sättet hanteras inte kortuppgifterna av min server och webhooken behövs då betalningen bekräftas i efterhand, på det sättet är det inte webbläsaren utan servern som markerar orders som betalda.
+3.1 Jag använde Stripes SDK med en redirect till Stripes betalsida och en webhook. Kortuppgifterna hanteras aldrig av min server, och webhooken behövs eftersom betalningen bekräftas i efterhand, så det är servern, inte webbläsaren, som markerar ordern som betald.
 
 3.2 Jag använde Express för att det finns hemliga nycklar som inte får hamna i webbläsaren och att priset räknas från servern och inte frontend.
 
-3.3 Jag valde att integrera för kortbetalningar kräver PCI-hantering och säkerhet som är svårt att återskapa snabbt/lätt. Det hjälper också med att hantera kortuppgifter säkert, bankkopplingar, 3-D Secure (extra godkännande) och bedrägeriskydd.
+3.3 Kortbetalningar kräver PCI-hantering, säker hantering av kortuppgifter, 3-D Secure och bedrägeriskydd, vilket är svårt att bygga själv.
 
-3.4 Om Stripe är nere skickar jag ett 502 fel meddelande som ger ett begripligt svar på vad som är fel och ordern förblir pending tills den blir betald eller sessionen går ut och blir cancelled.
+3.4 Om Stripe är nere skickar jag ett 502-svar med ett begripligt meddelande på vad som är fel och ordern förblir pending tills den blir betald eller sessionen går ut och blir cancelled.
 
-3.5 Riskerna med Stripe kan vara avgifter mellan Stripe och företaget, ändrade vilkor från Stripe, att ha personuppgifter hos en tredje part och att varje köp kostar en avgift per transaktion.
+3.5 Stripe tar en avgift per transaktion, villkoren kan ändras, och kunders personuppgifter hamnar hos en tredje part.
 
 ### Labb 4:
 4.1 Jag använde en SDK-integration (Supabase) mot Supabase Storage via REST där servern tar emot filen och laddar upp den, bilderna visas sen direkt från Supabase.
 
 4.2 Jag använde Express för att den hemliga nyckeln kan skriva och ta bort och den får inte hamna i webbläsaren. Servern kan dessutom validera filtypen och storleken innan något laddas upp.
 
-4.3  Jag valde att integrera för att lagra, visa och cacha bilder globalt samt hantera backup är svårt och en egen lösning skulle kräva en filserver, lagringsutrymme och snabb leverans.
+4.3 Jag valde att integrera för att lagra, visa och cacha bilder globalt samt hantera backup är svårt och en egen lösning skulle kräva en filserver, lagringsutrymme och snabb leverans.
 
 4.4 Om Supabase är nere får admin ett begripligt meddelande (502), produkten behåller den gamla bilden och shoppen visar bilderna som redan ligger i bucketen om lagringen svarar, annars en "trasig" bild.
 
-4.5 Risker med detta är bland annat att gratisplanen har begränsningar (1 GB lagring totalt, 50MB per fil), och gratisprojekt pausas efter en veckas inaktivitet (Render och Supabase), vilket gör att bilderna inte går att nå förrän projektet väcks. Villkoren kan ändras och bilder på personer är personuppgifter som hamnar hos en tredje part, så man behöver veta var datan lagras och ha ett avtal med leverantören.
+4.5 Risker med detta är bland annat att gratisplanen har begränsningar (1 GB lagring totalt) och gratisprojekt pausas efter en veckas inaktivitet (Supabase), vilket gör att bilderna inte går att nå förrän projektet väcks. Villkoren kan ändras och bilder på personer är personuppgifter som hamnar hos en tredje part, så man behöver veta var datan lagras och ha ett avtal med leverantören.
+
+### Labb 5:
+5.1 Jag anropar PostNords REST-API direkt med fetch (nyckeln i adressen, dvs. inget SDK) och fraktpriserna kommer från min egen prislista, eftersom PostNord inte har något pris-API.
+
+5.2 Jag använde Express eftersom nyckeln ligger i URL:en och skulle synas i webbläsaren, och servern kan validera svaret och räkna priset.
+
+5.3 Jag integrerade eftersom PostNord har ombuden, deras öppettider och transportnätet, att bygga det själv skulle inte bara ta tid utan också kräva egen data om alla ombud i hela Sverige och leveranstider.
+
+5.4 Om PostNord skulle vara nere får man ett 502 med ett meddelande som säger att något är fel och att man fortfarande kan välja hemleverans, leveranstiden kommer inte med men hemleveransen funkar utan PostNord.
+
+5.5 Risker med detta är att sandlådan och produktion kan skilja sig med t.ex. nycklar och villkor. API:et kan ändras t.ex. tjänstekoder och format samt att kundens adress och postnummer skickas till en tredjepart.

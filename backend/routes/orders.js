@@ -17,7 +17,15 @@ router.get("/by-session", async (req, res) => {
         return res.status(404).json({error: "Order not found"})
     }
 
-    res.json({status: order.status, totalPrice: order.totalPrice, items: order.items})
+    res.json({
+    status: order.status,
+    totalPrice: order.totalPrice,
+    items: order.items,
+    itemsTotal: order.itemsTotal,
+    shippingMethod: order.shippingMethod,
+    shippingPrice: order.shippingPrice,
+    servicePoint: order.servicePoint
+})
 })
 
 router.get("/", protect, adminOnly, async (req, res) => {

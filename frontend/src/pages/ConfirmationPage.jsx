@@ -76,6 +76,7 @@ export default function ConfirmationPage() {
             <h2>Thank you for your order!</h2>
             <p>Total: {formatPrice(order.totalPrice)}</p>
           </div>
+        <div className="confirmation-body">
           <div className="confirmation-grid">
             {order.items.map((item, index) => (
               <div className="confirmation-card" key={index}>
@@ -86,6 +87,20 @@ export default function ConfirmationPage() {
               </div>
             ))}
           </div>
+
+          {order.shippingMethod && (
+            <div className="confirmation-shipping">
+              <h3>Shipping</h3>
+              <p>
+                {order.shippingMethod === "service_point" ? "Pick-up point" : "Home delivery"}
+                {order.servicePoint && `: ${order.servicePoint.name}, ${order.servicePoint.address}`}
+              </p>
+              <p>Items: {formatPrice(order.itemsTotal)}</p>
+              <p>Shipping: {order.shippingPrice === 0 ? "Free" : formatPrice(order.shippingPrice)}</p>
+              <p>Total: {formatPrice(order.totalPrice)}</p>
+            </div>
+          )}
+        </div>
         </>
       ) : order.status === "pending" ? (
         <div className="confirmation-header">
