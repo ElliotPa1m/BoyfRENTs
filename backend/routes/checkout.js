@@ -3,18 +3,25 @@ import {z} from "zod"
 import {db} from "../index.js"
 import {createHostedCheckout} from "../integrations/paymentAdapter.js"
 import { ObjectId } from "mongodb"
+import { findServicePoints } from "../integrations/shippingAdapter.js"
+import { calculateShipping } from "../lib/shippingPrices.js"
 
 const Cart = z.object({
     customerName: z.string().min(1),
     customerAddress: z.string().min(1),
     customerEmail: z.email(),
-    customerZipCode: z.string().min(1),
+    customerZipCode: z.string().trim().regex(/^\d{3} ?\d{2}$/, "Postal code must be 5 digits"),
     customerCounty: z.string().min(1),
+    shippingMethod: z.enum(["service_point", "home"]),
+    servicePointId: z.string().min(1).optional(),
     items: z.array(z.object({
         productId: z.string().regex(/^[0-9a-fA-F]{24}$/),
         quantity: z.number().int().min(1).max(100)
     })).min(1)
-})
+}).refine(
+    data => data.shippingMethod !== "service_point" || data.servicePointId,
+    { message: "Choose a service point", path: ["servicePointId"] }
+)
 
 const router = express.Router()
 
@@ -51,14 +58,38 @@ router.post("/hosted", async (req, res) => {
         totalPrice += product.price * quantity
     }
 
+     const postalCode = cart.data.customerZipCode.replace(" ", "")
+
+    // ombudet kan vara vad som helst som React skickar: fråga PostNord igen och leta efter det
+    let servicePoint = null
+    if (cart.data.shippingMethod === "service_point") {
+        try {
+            const nearby = await findServicePoints(postalCode)
+            servicePoint = nearby.find(point => point.id === cart.data.servicePointId) ?? null
+        } catch (err) {
+            console.error(err)
+            return res.status(502).json({ error: "Could not check the service point with PostNord. Try again, or choose home delivery." })
+        }
+        if (!servicePoint) {
+            return res.status(400).json({ error: "Choose a service point near your postal code" })
+        }
+    }
+
+    const itemsTotal = Math.round(totalPrice * 100) / 100
+    const shippingPrice = calculateShipping(cart.data.shippingMethod, itemsTotal)
+
     const order = {
         customerName: cart.data.customerName,
         customerAddress: cart.data.customerAddress,
         customerEmail: cart.data.customerEmail,
-        customerZipCode: cart.data.customerZipCode,
+        customerZipCode: postalCode,
         customerCounty: cart.data.customerCounty,
         items: orderItems,
-        totalPrice: Math.round(totalPrice * 100) / 100,
+        itemsTotal,
+        shippingMethod: cart.data.shippingMethod,
+        shippingPrice,
+        servicePoint,
+        totalPrice: Math.round((itemsTotal + shippingPrice) * 100) / 100,
         status: "pending",
         createdAt: new Date()
     }
@@ -66,7 +97,12 @@ router.post("/hosted", async (req, res) => {
     const orderId = String(result.insertedId)
 
     try {
-        const checkout = await createHostedCheckout(orderId, orderItems)
+        const checkout = await createHostedCheckout(orderId, orderItems, {
+            name: cart.data.shippingMethod === "service_point"
+                ? `PostNord - service point (${servicePoint.name})`
+                : "PostNord - home delivery",
+            price: shippingPrice
+        })
 
         await db.collection("orders").updateOne(
             {_id: result.insertedId},

@@ -10,11 +10,13 @@ body {
 }
 
 .login-form {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 50vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 0;
+  margin: 40px auto;
+  padding-bottom: 40px;
 }
 
 .input-field {
@@ -250,10 +252,10 @@ body {
 }
 
 .confirmation-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 20px;
-    padding: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 20px;
 }
 
 .confirmation-card p {
@@ -263,7 +265,9 @@ body {
 .confirmation-card {
     background-color: var(--primary);
     border-radius: 12px;
-    padding: 16px;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 16px;
 }
 
 .confirmation-card img {
@@ -272,6 +276,12 @@ body {
     object-position: top;
     border-radius: 8px;
     max-height: 400px;
+}
+
+.confirmation-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 40px;
 }
 
 .admin-wrapper {
@@ -591,4 +601,51 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 12px;
+}
+
+.shipping-options {
+    text-align: center;
+}
+
+.shipping-options label,
+.shipping-options select {
+    display: block;
+}
+
+.shipping-options select {
+    margin: 8px auto 16px;
+}
+
+.quantity-controls {
+    display: flex; 
+    gap: 12px; 
+    align-items: center;
+    padding-bottom: 20px;
+    
+}
+
+.minus-btn {
+    background-color: var(--highlight);
+    color: white;
+    border:none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    margin-top: 10px;
+    width: 50px;
+    font-family: "Playfair Display", serif;
+    font-weight: 600;
+}
+
+.plus-btn {
+    background-color: var(--highlight);
+    color: white;
+    border:none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    margin-top: 10px;
+    width: 50px;
+    font-family: "Playfair Display", serif;
+    font-weight: 600;
 }

@@ -14,6 +14,7 @@ import searchRoutes from "./routes/search.js"
 import checkoutRoutes from "./routes/checkout.js"
 import stripeWebhookRoutes from "./routes/stripeWebhook.js"
 import storageAdminRoutes from "./routes/storageAdmin.js"
+import shippingRoutes from "./routes/shipping.js"
 
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 dns.setDefaultResultOrder("ipv4first");
@@ -24,6 +25,7 @@ const PORT = process.env.PORT || 5000
 app.use(cors())
 app.use("/api/stripe/webhook", stripeWebhookRoutes)
 app.use(express.json())
+app.use("/api/shipping", shippingRoutes)
 app.use("/api/admin", storageAdminRoutes)
 app.use("/api/checkout", checkoutRoutes)
 app.use("/api/products", productRoutes)
