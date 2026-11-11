@@ -190,7 +190,7 @@ Jag valde en JWT i en httpOnly-cookie då den är tillståndslös, så servern b
 
 - `SameSite=None` och CSRF: frontend och backend ligger på olika domäner (Vercel och Render), så cookien måste ha `SameSite=None` för att skickas med. Då skyddar inte `SameSite` - längre mot CSRF. Skyddet är i stället CORS (bara min frontend får anropa backend med cookies) och att ändringar skickas som JSON. Ett robustare alternativ hade varit att lägga frontend och backend på samma domän och använda `SameSite=Lax`.
 
-- Vissa webbläsare (till exempel Brave) blockerar cookies mellan olika domäner (tredjepartscookies), och då ser inloggningen ut att fungera men kunden är inte inloggad. Samma domän för frontend och backend löser det.
+- Vissa webbläsare (Safari, Firefox och Brave)  blockerar eller delar upp tredjepartscookies mellan olika domäner och då ser inloggningen ut att fungera men kunden är inte inloggad. Samma domän för frontend och backend eller en rewrite i Vercel gör att det hade fungerat i alla webbläsare.
 
 - Jag kontrollerar `iss`, `aud` och `exp` men inte signaturen, eftersom jag får token direkt från Google (HTTPS) i ett server-till-server-anrop. Hade den kommit via webbläsaren skulle signaturen behövt kontrolleras med Googles publika nycklar.
 
