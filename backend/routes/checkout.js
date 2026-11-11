@@ -5,6 +5,7 @@ import {createHostedCheckout} from "../integrations/paymentAdapter.js"
 import { ObjectId } from "mongodb"
 import { findServicePoints } from "../integrations/shippingAdapter.js"
 import { calculateShipping } from "../lib/shippingPrices.js"
+import { optionalCustomer } from "../middleware/customerAuth.js"
 
 const Cart = z.object({
     customerName: z.string().min(1),
@@ -25,7 +26,7 @@ const Cart = z.object({
 
 const router = express.Router()
 
-router.post("/hosted", async (req, res) => {
+router.post("/hosted", optionalCustomer, async (req, res) => {
     const cart = Cart.safeParse(req.body)
     if (!cart.success) {
         return res.status(400).json({error: "Invalid cart", details: z.prettifyError(cart.error)})
@@ -84,6 +85,7 @@ router.post("/hosted", async (req, res) => {
         customerEmail: cart.data.customerEmail,
         customerZipCode: postalCode,
         customerCounty: cart.data.customerCounty,
+        customerId: res.locals.customer?.id ?? null,
         items: orderItems,
         itemsTotal,
         shippingMethod: cart.data.shippingMethod,

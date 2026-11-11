@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom"
 import { useCart } from "../../context/CartContext"
 import { useCurrency } from "../../context/CurrencyContext"
-import Navbar from "../components/Navbar";
+import Navbar from "../components/Navbar"
+import { host } from "../variables"
 
 export default function CartPage() {
 
@@ -11,14 +12,18 @@ export default function CartPage() {
 
   const itemsTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
-  const handleCheckout = () => {
-    const token = localStorage.getItem("token")
-    if (!token) {
-      navigate("/login")
-    } else {
-      navigate("/checkout")
-    }
+  const handleCheckout = async () => {
+  if (localStorage.getItem("token")) {
+    navigate("/checkout")
+    return
   }
+  try {
+    const res = await fetch(`${host}/api/me`, { credentials: "include" })
+    navigate(res.ok ? "/checkout" : "/login")
+  } catch {
+    navigate("/login")
+  }
+}
 
   return (
     <div>

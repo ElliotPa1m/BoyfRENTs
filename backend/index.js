@@ -15,6 +15,9 @@ import checkoutRoutes from "./routes/checkout.js"
 import stripeWebhookRoutes from "./routes/stripeWebhook.js"
 import storageAdminRoutes from "./routes/storageAdmin.js"
 import shippingRoutes from "./routes/shipping.js"
+import cookieParser from "cookie-parser"
+import googleAuthRoutes from "./routes/googleAuth.js"
+import meRoutes from "./routes/me.js"
 
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 dns.setDefaultResultOrder("ipv4first");
@@ -22,9 +25,12 @@ dns.setDefaultResultOrder("ipv4first");
 const app = express()
 const PORT = process.env.PORT || 5000
 
-app.use(cors())
+app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }))
 app.use("/api/stripe/webhook", stripeWebhookRoutes)
 app.use(express.json())
+app.use(cookieParser())
+app.use("/api/auth/google", googleAuthRoutes)
+app.use("/api/me", meRoutes)
 app.use("/api/shipping", shippingRoutes)
 app.use("/api/admin", storageAdminRoutes)
 app.use("/api/checkout", checkoutRoutes)
