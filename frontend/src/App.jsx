@@ -12,6 +12,7 @@ import ProductsPage from "./pages/ProductsPage";
 import ProductDetailsPage from "./pages/ProductDetailsPage"
 import RegisterPage from "./pages/RegisterPage"
 import AdminRoute from "./components/AdminRoute"
+import AccountPage from "./pages/AccountPage"
 import "./App.css"
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/confirmation" element={<ConfirmationPage />} />
         <Route path="/products/:id" element={<ProductDetailsPage />} />
+        <Route path="/account" element={<AccountPage />} />
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/admin/products" element={<AdminProducts />} />

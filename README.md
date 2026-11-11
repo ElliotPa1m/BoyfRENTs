@@ -1,3 +1,5 @@
+# Inlämningsuppgift 1:
+
 ## KOM IGÅNG:
 https://boyf-ren-ts.vercel.app/
 
@@ -108,3 +110,89 @@ Jag valde att använda Claude i webbläsaren för denna labben. Priserna är i U
 5.4 Om PostNord skulle vara nere får man ett 502 med ett meddelande som säger att något är fel och att man fortfarande kan välja hemleverans, leveranstiden kommer inte med men hemleveransen funkar utan PostNord.
 
 5.5 Risker med detta är att sandlådan och produktion kan skilja sig med t.ex. nycklar och villkor. API:et kan ändras t.ex. tjänstekoder och format samt att kundens adress och postnummer skickas till en tredjepart.
+
+# Inlämningsuppgift 2: Konton och autentisering
+
+## Kom igång (Google)
+Skapa en OAuth-klient i Google Cloud Console, lägg callback-adresserna (http://localhost:5000/api/auth/google/callback och backend adressen) under Authorized redirect URIs, lägg GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL och SESSION_TOKEN_SECRET i .env (och i Render, samt NODE_ENV=production). Klicka på “Log in with Google” på inloggningssidan, handla, och se ordern under “My pages”. CLIENT_URL är adressen till frontend: http://localhost:5173 lokalt, och den deployade Vercel-adressen i Render. Den används för CORS och för att skicka kunden tillbaka efter inloggningen. Google-appen ska vara satt till In production, och att SameSite=None kräver https, så att det testas i en webbläsare som tillåter tredjepartscookies (till exempel Chrome).
+
+## Redogörelse: Autentiseringen
+### Inloggningsflödet:
+1. På inloggningssidan klickar kunden på "Log in with Google" som är en vanlig länk till `GET /api/auth/google` på backend `routes/googleAuth.js`
+
+2. Servern skapar slumpade state och code_verifier i `lib/pkce.js` och sparar dom i två korta httpOnly-cookies som räcker i 10 minuter samt skickar kunden vidare till Google. Adressen innehåller state, code_challenge (SHA-256-hash av verifieraren), scope openid email profile och redirect_uri från getAuthorizeUrl i `googleAdapter.js`
+
+3. Kunden loggar in hos Google och godkänner att shoppen får se namn och e-post
+
+4. Google skickar tillbaka kunden till GET /api/auth/google/callback med en code och state
+
+5. Servern kollar state och jämför värdet i adressen med cookien om det inte stämmer eller saknas cookien så avvisas inloggningen. Den läser också code_verifier ur cookien och rensar bort de två cookiesen. Om kunden avbryter eller Google skickar ett fel visas ett begripligt meddelande på inloggningssidan (kunden skickas tillbaka till /login med ett felmeddelande)
+
+6. Servern byter code mot tokens hos Google dvs. server till server med client_secret och code_verifier i exchangeCode i googleAdapter.js. Client secret når aldrig webbläsaren.
+
+7. Kunden läses av servern via ID-token som är en JWT från Google, den kontrollerar att den är utfärdad av Google (iss), till shoppen (aud) och att den inte har gått ut (exp) samt validerar uppgifterna med Zod
+
+8. Servern hittar eller skapar en kund och lägger till den i customers på databasen med Googles `sub` dvs inte på e-posten
+
+9. Servern loggar in kunden, den signerar shoppens egen JWT och sätter den i en httpOnly-cookie session och skickar kunden till /account. 
+
+Efter det håller cookien kunden inloggad med verifyToken i middleware/customerAuth.js, läser och verifierar den på varje skyddad route /api/me, /api/me/orders och optionalCustomer kopplar en order till kunden om hen är inloggad
+
+Om något skulle gå fel så har anropen till Google en timeout på 5 sekunder och om Google inte svarar eller avvisar koden får kunden ett begripligt meddelande på inloggningssidan och shoppen kraschar inte.
+
+### State och PKCE
+State: Innan kunden skickas till Google skapar servern ett slumpat värde (`randomString()`), sparar det i en httpOnly cookie i kundens webbläsare och skickar med det till Google, Google skickar tillbaka det och servern jämför. Det är där för att skydda mot att en angripare får kundens webbläsare att slutföra en inloggning som angriparen startade så att kunden loggas in på angriparens konto (CSRF vid inloggning).
+
+PKCE: Servern skapar en slumpad `code_verifier` och skickar enbart dess SHA-256 hash `code_challenge` till Google så när koden byts mot tokens skickar servern den verifieraren och Google kollar att den matchar hashen dvs en stulen code går inte att använda för den saknar verifieraren som endast servern och kundens cookie har.
+
+Jag använder båda eftersom de skyddar mot olika saker: state kontrollerar att det är samma webbläsare som startade inloggningen, och PKCE att det är samma server som hämtar tokens
+
+### Tokens
+
+Token: Authorization code, Används till: byts mot tokens, server till server, Sparas: sparas inte, finns bara i adressen i callbacken, Gäller: kort, kan användas en gång
+
+Token: Googles ID-token (JWT), Används till: läsa vem kunden är (`sub`, e-post, namn), Sparas: sparas inte, når aldrig webbläsaren, Gäller: kort, `exp` anger när den går ut (ca en timme)
+
+Token: Googles access token, Används till: används inte (jag behöver bara veta vem kunden är), Sparas: sparas inte
+
+Token: `state` och `code_verifier`, Används till: skydda inloggningsflödet, Sparas: två httpOnly-cookies, Gäller: 10 minuter, rensas i callbacken
+
+Token: Shoppens session-JWT, Används till: håller kunden inloggad, Sparas: httpOnly-cookie `session`, Gäller: 7 dagar
+
+Googles tokens når aldrig webbläsaren. Webbläsaren får bara shoppens cookie, som är httpOnly, dvs JavaScript kan inte läsa den. Session-JWT:n är signerad med `SESSION_TOKEN_SECRET` och innehåller bara kundens id, e-post och namn då den är signerad men inte krypterad, så ingen hemlig information får ligga i den.
+
+### Session eller JWT
+
+Jag valde en JWT i en httpOnly-cookie då den är tillståndslös, så servern behöver ingen sessionstabell och ingen databasuppslagning för varje anrop. Det passar en gratis Render-tjänst som somnar och startar om. Sessioner i minnet skulle försvinna och sessioner i databasen kräver städning. Det är också samma teknik som min vanliga lösenordsinloggning redan använder. Nackdelen är att en JWT inte går att spärra i förväg: den gäller tills den går ut. Utloggning tar bara bort cookien i webbläsaren.
+
+### Mina val
+
+- Lösenordsinloggningen finns kvar och Google är ett extra sätt att logga in.
+
+- Kunder som loggat in med Google sparas i `customers` med Googles `sub`, vanliga konton ligger kvar i `users`. Shoppen verifierar inte e-post för lösenordskonton, så en automatisk sammanslagning skulle låta någon ta över ett konto genom att registrera sig med någon annans adress.
+
+- Kunden känns igen på `sub` som aldrig ändras och inte på e-post som kan ändras eller bytas ut.
+
+- Bara scope `openid email profile`, namn och e-post, inget annat.
+
+- En order som läggs inloggad får `customerId`, och "My Pages" läser id:t ur cookien aldrig ur anropet så en kund kan inte be om någon annans ordrar.
+
+- Känd begränsning: en Google-kunds varukorg sparas inte på servern så om sidan laddas om försvinner varukorgen.
+
+
+### Risker och resonemang
+
+- Den som har cookien är inloggad som kunden tills den går ut. `httpOnly` skyddar mot att JavaScript (XSS) kan läsa den och `secure` mot att den skickas över en okrypterad anslutning. Det som återstår är till exempel skadlig kod på kundens dator. Min vanliga lösenordsinloggning sparar sin token i localStorage, där skadlig JavaScript (XSS) kan läsa den.
+
+- En JWT går inte att spärra i förväg. Alternativen är att byta `SESSION_TOKEN_SECRET` (som loggar ut alla), kortare giltighetstid eller en spärrlista i databasen men då är den inte längre tillståndslös. En server-session kan spärras direkt genom att man tar bort den ur databasen.
+
+- JWT passar små, tillståndslösa API:er där token kan gå ut av sig själv. En session passar när man måste kunna logga ut en användare direkt eller ändra rättigheter på en gång t.ex. för administratörer.
+
+- `SameSite=None` och CSRF: frontend och backend ligger på olika domäner (Vercel och Render), så cookien måste ha `SameSite=None` för att skickas med. Då skyddar inte `SameSite` - längre mot CSRF. Skyddet är i stället CORS (bara min frontend får anropa backend med cookies) och att ändringar skickas som JSON. Ett robustare alternativ hade varit att lägga frontend och backend på samma domän och använda `SameSite=Lax`.
+
+- Vissa webbläsare (till exempel Brave) blockerar cookies mellan olika domäner (tredjepartscookies), och då ser inloggningen ut att fungera men kunden är inte inloggad. Samma domän för frontend och backend löser det.
+
+- Jag kontrollerar `iss`, `aud` och `exp` men inte signaturen, eftersom jag får token direkt från Google (HTTPS) i ett server-till-server-anrop. Hade den kommit via webbläsaren skulle signaturen behövt kontrolleras med Googles publika nycklar.
+
+- `client_secret` och `SESSION_TOKEN_SECRET` finns bara i miljövariabler på servern, aldrig i koden eller i webbläsaren. Har en av dem läckt byter man den.
+
