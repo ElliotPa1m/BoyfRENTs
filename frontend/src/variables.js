@@ -1,2 +1,1 @@
-export const host = "https://ehandel-systemutveckling-elliot.onrender.com"
-// export const host = "http://localhost:5000"
+export const host = import.meta.env.DEV ? "http://localhost:5000" : ""
