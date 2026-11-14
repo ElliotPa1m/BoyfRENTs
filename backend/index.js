@@ -18,6 +18,8 @@ import shippingRoutes from "./routes/shipping.js"
 import cookieParser from "cookie-parser"
 import googleAuthRoutes from "./routes/googleAuth.js"
 import meRoutes from "./routes/me.js"
+import githubAuthRoutes from "./routes/githubAuth.js"
+import adminIssuesRoutes from "./routes/adminIssues.js"
 
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 dns.setDefaultResultOrder("ipv4first");
@@ -29,6 +31,8 @@ app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }))
 app.use("/api/stripe/webhook", stripeWebhookRoutes)
 app.use(express.json())
 app.use(cookieParser())
+app.use("/api/auth/github", githubAuthRoutes)
+app.use("/api/admin/issues", adminIssuesRoutes)
 app.use("/api/auth/google", googleAuthRoutes)
 app.use("/api/me", meRoutes)
 app.use("/api/shipping", shippingRoutes)

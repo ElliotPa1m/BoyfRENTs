@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { host } from "../../variables"
+import BackLink from "../../components/BackLink"
 
 export default function AdminNewProductPage() {
 
@@ -20,9 +21,14 @@ const handleSubmit = async (e) => {
     setWarning("")
 
     try {
+      const token = localStorage.getItem("token")
       const response = await fetch(`${host}/api/products`, {
       method: "POST",
-      headers: {"Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}`},
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? {"Authorization": `Bearer ${token}`} : {})
+      },
       body: JSON.stringify({name, age: Number(age), description, price: Number(price), category})
     })
 
@@ -46,6 +52,8 @@ const handleSubmit = async (e) => {
   }
 
   return (
+    <>
+    <BackLink to="/admin" />
     <form className="new-product-wrapper" onSubmit={handleSubmit}>
       <input className="new-product" type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)}></input>
       <input className="new-product" type="number" placeholder="Age" value={age} onChange={(e) => setAge(e.target.value)}></input>
@@ -61,5 +69,6 @@ const handleSubmit = async (e) => {
         </>
       )}
     </form>
+    </>
   )
 }

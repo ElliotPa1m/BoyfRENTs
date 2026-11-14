@@ -1,4 +1,6 @@
+import { useState, useEffect } from "react"
 import { Navigate, Outlet } from "react-router-dom"
+import { host } from "../variables"
 
 function getRole() {
   const token = localStorage.getItem("token")
@@ -17,5 +19,18 @@ function getRole() {
 }
 
 export default function AdminRoute() {
-  return getRole() === "admin" ? <Outlet /> : <Navigate to="/login" replace />
+  const passwordAdmin = getRole() === "admin"
+  const [githubAdmin, setGithubAdmin] = useState(null)   // null = vet inte än
+
+  useEffect(() => {
+    if (passwordAdmin) return
+
+    fetch(`${host}/api/auth/github/me`, { credentials: "include" })
+      .then(res => setGithubAdmin(res.ok))
+      .catch(() => setGithubAdmin(false))
+  }, [passwordAdmin])
+
+  if (passwordAdmin) return <Outlet />
+  if (githubAdmin === null) return <p>Loading...</p>
+  return githubAdmin ? <Outlet /> : <Navigate to="/login" replace />
 }

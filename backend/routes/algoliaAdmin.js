@@ -1,11 +1,11 @@
 import express from "express"
-import {protect, adminOnly} from "../middleware/authMiddleware.js"
+import { requireAdmin } from "../middleware/adminAuth.js"
 import {db} from "../index.js"
 import { indexProducts } from "../integrations/searchAdapter.js"
 
 const router = express.Router()
 
-router.post("/reindex", protect, adminOnly, async (req, res) => {
+router.post("/reindex", requireAdmin, async (req, res) => {
 
     try {
         const products = await db.collection("products").find().toArray()

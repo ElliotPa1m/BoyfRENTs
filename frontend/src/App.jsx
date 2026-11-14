@@ -9,10 +9,11 @@ import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import ConfirmationPage from "./pages/ConfirmationPage";
 import ProductsPage from "./pages/ProductsPage";
-import ProductDetailsPage from "./pages/ProductDetailsPage"
-import RegisterPage from "./pages/RegisterPage"
-import AdminRoute from "./components/AdminRoute"
-import AccountPage from "./pages/AccountPage"
+import ProductDetailsPage from "./pages/ProductDetailsPage";
+import RegisterPage from "./pages/RegisterPage";
+import AdminRoute from "./components/AdminRoute";
+import AccountPage from "./pages/AccountPage";
+import AdminIssuesPage from "./pages/admin/AdminIssuesPage";
 import "./App.css"
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
           <Route path="/admin/products/new" element={<AdminNewProductPage />} />
           <Route path="/admin/products/:id" element={<AdminSpecificProductPage />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
+          <Route path="/admin/issues" element={<AdminIssuesPage />} />
         </Route>
         <Route path="/login" element={<AdminLogin />} />
         <Route path="/register" element={<RegisterPage />} />
