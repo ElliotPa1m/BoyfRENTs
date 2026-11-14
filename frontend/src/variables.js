@@ -1,1 +1,1 @@
-export const host = import.meta.env.DEV ? "http://localhost:5000" : ""
+export const host = ""

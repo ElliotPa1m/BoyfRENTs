@@ -1,7 +1,7 @@
 import express from "express";
 import { db } from "../index.js";
 import { ObjectId } from "mongodb";
-import { protect, adminOnly } from "../middleware/authMiddleware.js";
+import { requireAdmin } from "../middleware/adminAuth.js"
 
 const router = express.Router()
 
@@ -28,12 +28,12 @@ router.get("/by-session", async (req, res) => {
 })
 })
 
-router.get("/", protect, adminOnly, async (req, res) => {
+router.get("/", requireAdmin, async (req, res) => {
     const products = await db.collection("orders").find().toArray()
     res.json(products)
 })
 
-router.put("/:id", protect, adminOnly, async (req, res) => {
+router.put("/:id", requireAdmin, async (req, res) => {
     const id = req.params.id
     const update = req.body
     const result = await db.collection("orders").updateOne(

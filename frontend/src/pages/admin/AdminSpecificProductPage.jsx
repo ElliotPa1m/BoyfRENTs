@@ -1,6 +1,7 @@
 import { useParams, useNavigate, Link } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { host } from "../../variables"
+import BackLink from "../../components/BackLink"
 
 export default function AdminSpecificProductPage() {
   const { id } = useParams()
@@ -40,9 +41,14 @@ export default function AdminSpecificProductPage() {
     setWarning("")
 
     try {
+      const token = localStorage.getItem("token")
       const response = await fetch(`${host}/api/products/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ name, age: Number(age), description, price: Number(price), imageUrl, category })
       })
 
@@ -74,9 +80,11 @@ export default function AdminSpecificProductPage() {
       const form = new FormData()
       form.append("image", file)
 
+      const token = localStorage.getItem("token")
       const response = await fetch(`${host}/api/admin/products/${sku}/image`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: form
       })
       const data = await response.json()
@@ -101,41 +109,42 @@ export default function AdminSpecificProductPage() {
 
   return (
     <>
-    <div className="edit-product-layout">
-      {imageUrl && (
-        <div className="edit-photo-wrapper">
-        <img className="edit-photo" src={imageUrl} alt={name} width={264} />
-        <p>Current photo</p>
-        </div>
+    <BackLink to="/admin/products" />
+      <div className="edit-product-layout">
+        {imageUrl && (
+          <div className="edit-photo-wrapper">
+            <img className="edit-photo" src={imageUrl} alt={name} width={264} />
+            <p>Current photo</p>
+          </div>
         )}
-      <form className="new-product-wrapper-1" onSubmit={handleSubmit}>
-        <input className="new-product" type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)}></input>
-        <input className="new-product" type="number" placeholder="Age" value={age} onChange={(e) => setAge(e.target.value)}></input>
-        <input className="new-product" type="text" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)}></input>
-        <input className="new-product" type="number" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)}></input>
-      </form>
-      <form className="new-product-wrapper-2" onSubmit={handleSubmit}>
-        {/* <input className="new-product" type="text" placeholder="Image" value={imageUrl} readOnly></input> */}
-        <div>
-          {/* {imageUrl && <img className="edit-photo" src={imageUrl} alt={name} width={264} />} */}
-          <input id="custom-file-input" type="file" accept="image/png, image/jpeg" onChange={(e) => setFile(e.target.files?.[0] ?? null)} style={{display: "none"}} />
-          <label htmlFor="custom-file-input" className="custom-file-label">Choose image</label>
-          <button className="image-upload-btn" type="button" onClick={handleImageUpload} disabled={!file || uploading || !sku}>
-            {uploading ? "Uploading..." : "Upload image"}
-          </button>
-          {imageError && <p>{imageError}</p>}
-          {imageWarning && <p>{imageWarning}</p>}
-        </div>
-        <input className="new-product" type="text" placeholder="Category" value={category} onChange={(e) => setCategory(e.target.value)}></input>
-        <button className="create-new-product" type="submit" disabled={!!warning}>Save</button>
-        {error && <p>{error}</p>}
-        {warning && (
-          <>
-            <p>{warning}</p>
-            <Link to="/admin/products">Back to products</Link>
-          </>
-        )}
-      </form>
+        <form className="new-product-wrapper-1" onSubmit={handleSubmit}>
+          <input className="new-product" type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)}></input>
+          <input className="new-product" type="number" placeholder="Age" value={age} onChange={(e) => setAge(e.target.value)}></input>
+          <input className="new-product" type="text" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)}></input>
+          <input className="new-product" type="number" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)}></input>
+        </form>
+        <form className="new-product-wrapper-2" onSubmit={handleSubmit}>
+          {/* <input className="new-product" type="text" placeholder="Image" value={imageUrl} readOnly></input> */}
+          <div>
+            {/* {imageUrl && <img className="edit-photo" src={imageUrl} alt={name} width={264} />} */}
+            <input id="custom-file-input" type="file" accept="image/png, image/jpeg" onChange={(e) => setFile(e.target.files?.[0] ?? null)} style={{ display: "none" }} />
+            <label htmlFor="custom-file-input" className="custom-file-label">Choose image</label>
+            <button className="image-upload-btn" type="button" onClick={handleImageUpload} disabled={!file || uploading || !sku}>
+              {uploading ? "Uploading..." : "Upload image"}
+            </button>
+            {imageError && <p>{imageError}</p>}
+            {imageWarning && <p>{imageWarning}</p>}
+          </div>
+          <input className="new-product" type="text" placeholder="Category" value={category} onChange={(e) => setCategory(e.target.value)}></input>
+          <button className="create-new-product" type="submit" disabled={!!warning}>Save</button>
+          {error && <p>{error}</p>}
+          {warning && (
+            <>
+              <p>{warning}</p>
+              <Link to="/admin/products">Back to products</Link>
+            </>
+          )}
+        </form>
       </div>
     </>
   )

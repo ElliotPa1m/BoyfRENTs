@@ -1,7 +1,7 @@
 import express from "express"
 import multer from "multer"
 import { db } from "../index.js"
-import { protect, adminOnly } from "../middleware/authMiddleware.js"
+import { requireAdmin } from "../middleware/adminAuth.js"
 import { uploadProductImage, removeProductImage } from "../integrations/storageAdapter.js"
 import { indexProducts } from "../integrations/searchAdapter.js"
 
@@ -25,7 +25,7 @@ function receiveImage(req, res, next) {
     })
 }
 
-router.post("/products/:sku/image", protect, adminOnly, receiveImage, async (req, res) => {
+router.post("/products/:sku/image", requireAdmin, receiveImage, async (req, res) => {
     const sku = typeof req.params.sku === 'string' ? req.params.sku : ''
     if (!sku) {
         res.status(400).json({error: "Invalid sku"})

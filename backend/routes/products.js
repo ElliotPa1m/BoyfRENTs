@@ -1,7 +1,7 @@
 import express from "express";
 import { db } from "../index.js";
 import { ObjectId } from "mongodb";
-import { protect, adminOnly } from "../middleware/authMiddleware.js";
+import { requireAdmin } from "../middleware/adminAuth.js"
 import { indexProducts, removeProduct } from "../integrations/searchAdapter.js";
 
 const router = express.Router()
@@ -11,7 +11,7 @@ router.get("/", async (req, res) => {
     res.json(products)
 })
 
-router.post("/", protect, adminOnly, async (req, res) => {
+router.post("/", requireAdmin, async (req, res) => {
     const newProduct = req.body
 
     const last = await db.collection("products").findOne(
@@ -40,7 +40,7 @@ router.get("/:id", async (req, res) => {
     res.json(product)
 })
 
-router.put("/:id", protect, adminOnly, async (req, res) => {
+router.put("/:id", requireAdmin, async (req, res) => {
     const id = req.params.id
     const update = req.body
     delete update.sku
@@ -62,7 +62,7 @@ router.put("/:id", protect, adminOnly, async (req, res) => {
     res.json({...result, searchIndexUpdated})
 })
 
-router.delete("/:id", protect, adminOnly, async (req, res) => {
+router.delete("/:id", requireAdmin, async (req, res) => {
     const id = req.params.id
 
     const product = await db.collection("products").findOne({_id: new ObjectId(id)})

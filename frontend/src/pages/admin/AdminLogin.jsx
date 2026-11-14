@@ -17,7 +17,12 @@ export default function AdminLogin() {
     google_error: "Google could not log you in. Please try again.",
     google_failed: "The login could not be completed. Please try again.",
     invalid_login: "The login could not be verified. Please try again.",
-    google_unavailable: "Google login is not available right now."
+    google_unavailable: "Google login is not available right now.",
+    github_cancelled: "The GitHub login was cancelled.",
+    github_error: "GitHub could not log you in. Please try again.",
+    github_failed: "The login could not be completed. Please try again.",
+    github_unavailable: "GitHub login is not available right now.",
+    not_admin: "This GitHub account is not an admin of the shop."
   }
 
   const handleSubmit = async (e) => {
@@ -50,6 +55,7 @@ export default function AdminLogin() {
         <input className="input-field" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
         <button className="login-btn" type="submit">Login</button>
         <a className="google-login-btn" href={`${host}/api/auth/google`}>Log in with Google</a>
+        <a className="google-login-btn" href={`${host}/api/auth/github`}>Admin login with GitHub</a>
         {googleError && <p>{googleMessages[googleError] ?? "Login failed. Please try again."}</p>}
         {error && <p>{error}</p>}
         <Link className="register-link" to="/register">No account? Register here!</Link>

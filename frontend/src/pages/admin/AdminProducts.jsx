@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useCurrency } from "../../../context/CurrencyContext"
 import { Link } from "react-router-dom";
 import { host } from "../../variables";
+import BackLink from "../../components/BackLink"
 
 export default function AdminProducts() {
 
@@ -19,9 +20,11 @@ export default function AdminProducts() {
     setMessage("")
 
     try {
+      const token = localStorage.getItem("token")
       const res = await fetch(`${host}/api/products/${id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
       })
       const data = await res.json()
 
@@ -59,9 +62,11 @@ export default function AdminProducts() {
     setMessage("")
 
     try {
+      const token = localStorage.getItem("token")
       const res = await fetch(`${host}/api/admin/products/import/${format}`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
       })
       const data = await res.json()
 
@@ -87,9 +92,11 @@ export default function AdminProducts() {
     setMessage("")
 
     try {
+      const token = localStorage.getItem("token")
       const res = await fetch(`${host}/api/admin/algolia/reindex`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
       })
       const data = await res.json()
 
@@ -108,6 +115,7 @@ export default function AdminProducts() {
 
   return (
     <div className="admin-product-list">
+      <BackLink to="/admin" />
       <button className="admin-product-btn" onClick={() => handleImport("csv")} disabled={importing}>Import from CSV</button>
       <button className="admin-product-btn" onClick={() => handleImport("xml")} disabled={importing}>Import from XML</button>
       <button className="admin-product-btn" onClick={handleReindex} disabled={importing}>Reindex</button>

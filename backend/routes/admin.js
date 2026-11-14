@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import express from "express"
 import { getSupplierCatalog } from '../integrations/supplierAdapter.js';
-import { protect, adminOnly } from "../middleware/authMiddleware.js";
+import { requireAdmin } from "../middleware/adminAuth.js"
 import { db } from "../index.js";
 import { indexProducts } from '../integrations/searchAdapter.js';
 
@@ -16,7 +16,7 @@ const SupplierProduct = z.object({
 
 const router = express.Router()
 
-router.post('/products/import/:format', protect, adminOnly, async (req, res) => {
+router.post('/products/import/:format', requireAdmin, async (req, res) => {
   const { format } = req.params
 
   if (format !== 'csv' && format !== 'xml')

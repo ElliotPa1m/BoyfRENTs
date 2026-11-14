@@ -4,8 +4,7 @@
 https://boyf-ren-ts.vercel.app/
 
 ### Steg för att starta klienten och servern lokalt:
-1. Öppna `frontend/src/variables.js` och byt vilken `host` som är aktiv: kommentera bort raden med Render-adressen och avkommentera raden med `localhost`.
-2. Öppna en terminal och skriv in "cd .\frontend\" och tryck Enter, efter det skriv in "npm run dev" och tryck Enter
+1. Öppna en terminal och skriv in "cd .\frontend\" och tryck Enter, efter det skriv in "npm run dev" och tryck Enter
 3. Öppna en till terminal och skriv in "cd .\backend\" och tryck Enter, efter det skriv in "npm run dev" och tryck Enter
 
 ### Testkonton:
@@ -114,7 +113,7 @@ Jag valde att använda Claude i webbläsaren för denna labben. Priserna är i U
 # Inlämningsuppgift 2: Konton och autentisering
 
 ## Kom igång (Google)
-Skapa en OAuth-klient i Google Cloud Console, lägg callback-adresserna (http://localhost:5000/api/auth/google/callback och backend adressen) under Authorized redirect URIs, lägg GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL och SESSION_TOKEN_SECRET i .env (och i Render, samt NODE_ENV=production). Klicka på “Log in with Google” på inloggningssidan, handla, och se ordern under “My pages”. CLIENT_URL är adressen till frontend: http://localhost:5173 lokalt, och den deployade Vercel-adressen i Render. Den används för CORS och för att skicka kunden tillbaka efter inloggningen. Google-appen ska vara satt till In production, och att SameSite=None kräver https, så att det testas i en webbläsare som tillåter tredjepartscookies (till exempel Chrome).
+Skapa en OAuth-klient i Google Cloud Console, lägg callback-adresserna (http://localhost:5000/api/auth/google/callback och https://boyf-ren-ts.vercel.app/api/auth/google/callback) under Authorized redirect URIs, lägg GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL och SESSION_TOKEN_SECRET i .env (och i Render, samt NODE_ENV=production). I Render ska GOOGLE_CALLBACK_URL vara Vercel-adressen. vercel.json filen har en rewrite som gör att /api-anropen skickas vidare till Render, så frontend och backend ligger på samma domän. Klicka på “Log in with Google” på inloggningssidan, handla, och se ordern under “My pages”. CLIENT_URL är adressen till frontend: http://localhost:5173 lokalt, och den deployade Vercel-adressen i Render. Den används för CORS och för att skicka kunden tillbaka efter inloggningen. Google-appen ska vara satt till In production.
 
 ## Redogörelse: Autentiseringen
 ### Inloggningsflödet:

@@ -337,7 +337,7 @@ body {
     border-radius: 8px;
     font-size: 1.2rem;
     font-family: 'Playfair Display', serif;
-    width: 180px;
+    width: 240px;
     text-align: center;
 }
 
@@ -679,4 +679,57 @@ body {
     cursor: pointer;
     color:var(--secondary);
     margin-top: 10px;
+}
+
+.back-link {
+    display: inline-block;
+    background-color: var(--highlight);
+    color: white;
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    padding: 8px 16px;
+    margin-top: 10px;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.2rem;
+    font-family: 'Playfair Display', serif;
+    cursor: pointer;
+}
+
+.admin-product-list > .back-link,
+.admin-product-list > .admin-product-btn {
+    width: 344px;
+    box-sizing: border-box;
+    margin-left: 0;
+}
+
+.admin-issues {
+    padding: 20px 40px;
+    max-width: 800px;
+}
+
+.issue-card {
+    background-color: var(--highlight);
+    color: white;
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin: 12px 0;
+    font-size: 1.2rem;
+    width: 264px;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+}
+
+.issue-card a {
+    color: white;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.issue-card a:hover {
+    text-decoration: underline;
+}
+
+.issue-card p {
+    margin: 4px 0 0;
 }
