@@ -112,6 +112,8 @@ Jag valde att använda Claude i webbläsaren för denna labben. Priserna är i U
 
 # Inlämningsuppgift 2: Konton och autentisering
 
+## Labb 6:
+
 ## Kom igång (Google)
 Skapa en OAuth-klient i Google Cloud Console, lägg callback-adresserna (http://localhost:5000/api/auth/google/callback och https://boyf-ren-ts.vercel.app/api/auth/google/callback) under Authorized redirect URIs, lägg GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL och SESSION_TOKEN_SECRET i .env (och i Render, samt NODE_ENV=production). I Render ska GOOGLE_CALLBACK_URL vara Vercel-adressen. vercel.json filen har en rewrite som gör att /api-anropen skickas vidare till Render, så frontend och backend ligger på samma domän. Klicka på “Log in with Google” på inloggningssidan, handla, och se ordern under “My pages”. CLIENT_URL är adressen till frontend: http://localhost:5173 lokalt, och den deployade Vercel-adressen i Render. Den används för CORS och för att skicka kunden tillbaka efter inloggningen. Google-appen ska vara satt till In production.
 
@@ -187,11 +189,63 @@ Jag valde en JWT i en httpOnly-cookie då den är tillståndslös, så servern b
 
 - JWT passar små, tillståndslösa API:er där token kan gå ut av sig själv. En session passar när man måste kunna logga ut en användare direkt eller ändra rättigheter på en gång t.ex. för administratörer.
 
-- `SameSite=None` och CSRF: frontend och backend ligger på olika domäner (Vercel och Render), så cookien måste ha `SameSite=None` för att skickas med. Då skyddar inte `SameSite` - längre mot CSRF. Skyddet är i stället CORS (bara min frontend får anropa backend med cookies) och att ändringar skickas som JSON. Ett robustare alternativ hade varit att lägga frontend och backend på samma domän och använda `SameSite=Lax`.
-
-- Vissa webbläsare (Safari, Firefox och Brave)  blockerar eller delar upp tredjepartscookies mellan olika domäner och då ser inloggningen ut att fungera men kunden är inte inloggad. Samma domän för frontend och backend eller en rewrite i Vercel gör att det hade fungerat i alla webbläsare.
+- Cookies och CSRF: frontend (Vercel) och backend (Render) ligger på olika domäner, men `vercel.json` har en rewrite som skickar `/api` vidare till Render. Webbläsaren ser därför bara en domän, och cookien är en förstapartscookie. Det gör att jag kan använda `SameSite=Lax` och inte `None`, vilket skyddar mot att andra sajter skickar med cookien i anrop jag inte startat (CSRF). Dessutom släpper CORS bara in min frontend och ändringar skickas som JSON. Jag provade först `SameSite=None` över två domäner, men då blockerade Brave cookien som en tredjepartscookie och inloggningen såg ut att fungera men gjorde det inte. Safari och Firefox gör liknande saker vad jag förstod det som efter lite undersökning. Med proxyn fungerar det i Chrome och Brave, som jag har testat.
 
 - Jag kontrollerar `iss`, `aud` och `exp` men inte signaturen, eftersom jag får token direkt från Google (HTTPS) i ett server-till-server-anrop. Hade den kommit via webbläsaren skulle signaturen behövt kontrolleras med Googles publika nycklar.
 
 - `client_secret` och `SESSION_TOKEN_SECRET` finns bara i miljövariabler på servern, aldrig i koden eller i webbläsaren. Har en av dem läckt byter man den.
 
+## Labb 7:
+
+## Kom igång (GitHub)
+- Skapa en OAuth App på GitHub under Settings, Developer settings, OAuth Apps. Kopiera Client ID och generera en ny client secret och kopiera den. Lägg in en Homepage URL som leder till din deployade sida och en Redirect URI som leder till din deployade sida med `/api/auth/github/callback` i slutet av länken, och spara. För att testa lokalt kan du lägga till `http://localhost:5173/api/auth/github/callback` i en egen OAuth App. Jag har en app för lokalt och en separat för produktion, så att produktionens client secret aldrig finns på min dator.
+
+- Gå sedan till Personal access tokens och skapa en Fine-grained token. Koppla den till rätt repo med bara Issues read/write och ett utgångsdatum (jag satte min på 90 dagar).
+
+- Lägg in GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GITHUB_CALLBACK_URL, GITHUB_ISSUES_TOKEN, GITHUB_REPO (formaterat `ägare/repo`), ADMIN_GITHUB_LOGINS (användarnamn, kommaseparerade) och ADMIN_SESSION_TOKEN_SECRET i .env filen och fyll i med relevant information. För den deployade sidan läggs de i Render. `.env.example` visar vilka som behövs.
+
+## Redogörelse: Autentiseringen
+### Inloggningsflödet:
+1. Admin klickar på "Admin login with GitHub" på inloggningssidan. Länken går till min server (`/api/auth/github`).
+2. Servern skapar `state` och en `code_verifier` (PKCE), sparar dem i korta cookies och skickar vidare till GitHub. Scopet är bara `read:user`.
+3. Admin klickar på Authorize på GitHubs sida och skickas tillbaka till callbacken på min server.
+4. Servern kontrollerar att `state` matchar och byter koden mot en token hos GitHub med client secret och code verifier.
+5. Servern hämtar användaren från GitHubs API och validerar svaret med Zod.
+6. Servern kontrollerar att användarnamnet finns i listan över admins (ADMIN_GITHUB_LOGINS i .env filen). Om inte får användaren ett felmeddelande.
+7. Admin sparas i databasen med GitHubs numeriska id, eftersom användarnamnet kan ändras men id:t inte.
+8. Servern skapar admin-token och skickar tillbaka admin till adminsidan.
+
+Avbruten inloggning och fel från GitHub ger ett begripligt meddelande på inloggningssidan.
+
+När man väl loggats in med GitHub som admin kan man klicka på Issues i admin dashboarden och där både skapa nya issues och se redan existerande öppna issues, som länkar till GitHub repot med mer detaljer. Issuen skapas av shoppens konto, så i texten står vilken admin som rapporterade den.
+
+### Tokens
+- GitHubs access token används en gång för att hämta id och användarnamn. Den sparas aldrig och når aldrig webbläsaren.
+
+- Admin-cookien `admin_token` är en JWT som gäller i 8 timmar. Den är `httpOnly` och `secure` i produktion, och signeras med ett eget secret som är skilt från kundernas. Den innehåller `role: "admin"` som servern kontrollerar.
+
+- Shoppens egen token för issues är en fine-grained token med bara Issues read/write för ett repo och ett utgångsdatum. Den är skild från inloggningen och ligger bara på servern i .env. Om den har gått ut svarar servern med ett felmeddelande och jag skapar en ny och byter den i Render.
+
+Jag valde shoppens token för issues (enligt Labb 7) och inte adminens egen token. Då behöver admin inte ge shoppen mer än läsrätt till sin profil.
+
+### Session eller JWT
+- Jag valde JWT i cookie. Admin-token gäller bara 8 timmar, kortare än kundens, så att admin inte är inloggad hur länge som helst.
+
+- Nackdelen med JWT är att den inte kan återkallas i förväg. Jag mildrar det genom att servern kontrollerar listan över admins på varje anrop. Tas ett användarnamn bort ur listan stoppas den admin direkt, även om hens token inte har gått ut.
+
+- En server-session hade varit rakare för admin eftersom den kan spärras direkt men jag behöll JWT för att det är samma teknik som för kunderna och för att det inte krävs någon sessionstabell. Svagheten mildras av den korta livslängden och kontrollen mot listan.
+
+### Risker och resonemang
+- Om admin-cookien stjäls: `httpOnly` gör att skript i webbläsaren inte kan läsa den, och `SameSite=Lax` gör att andra sajter inte kan använda den. Den gäller bara 8 timmar. Jag kan stoppa en admin direkt genom att ta bort användarnamnet ur ADMIN_GITHUB_LOGINS, och byter jag ADMIN_SESSION_TOKEN_SECRET blir alla admin-tokens ogiltiga på en gång.
+
+- Om shoppens token stjäls: Den kan bara läsa och skapa issues i ett repo. Jag spärrar den genom att återkalla den på GitHub och byta den i Render och utgångsdatumet begränsar hur länge den kan användas.
+
+- Om GitHubs access token stjäls: Den sparas aldrig och har bara läsrätt till profilen.
+
+- Om client secret läcker: Jag genererar en ny i OAuth appen. Därför har jag en separat app för produktion.
+
+- Användarnamn i listan: Om en admin byter användarnamn kan någon annan ta det gamla. Då skulle hen kunna bli admin. Det hade varit säkrare att lista id:n, men användarnamn är lättare att läsa och underhålla.
+
+- Skyddet sitter på servern: Alla adminroutes kontrolleras på servern och svarar 401 utan inloggning. `AdminRoute` i frontend visar bara rätt sida.
+
+- Session eller JWT: Sessioner på servern passar bäst när man måste kunna återkalla direkt eller har många användare. JWT passar för en enklare tjänst som min, med få admins och korta tokens.
