@@ -249,3 +249,29 @@ Jag valde shoppens token för issues (enligt Labb 7) och inte adminens egen toke
 - Skyddet sitter på servern: Alla adminroutes kontrolleras på servern och svarar 401 utan inloggning. `AdminRoute` i frontend visar bara rätt sida.
 
 - Session eller JWT: Sessioner på servern passar bäst när man måste kunna återkalla direkt eller har många användare. JWT passar för en enklare tjänst som min, med få admins och korta tokens.
+
+## Labb 8:
+
+## Kom igång (E-post)
+- Skapa ett konto på Resend och en API-nyckel med behörigheten Sending access. Lägg in RESEND_API_KEY och EMAIL_FROM (t.ex. `BoyfRENTs <onboarding@resend.dev>`) i .env filen och i Render. `.env.example` visar vilka som behövs.
+
+- Utan en egen domän kan `onboarding@resend.dev` bara skicka till e-postadressen på mitt Resend-konto, så testa med den adressen i kassan. Betala med Stripes testkort, och mejlet syns under Emails i Resend.
+
+## Mina val för Labb 8:
+- Mejlet skickas i Stripe-webhooken, efter att ordern har markerats som `paid`, och inte när kunden klickar på köp. Det är först då jag vet att betalningen har gått igenom.
+
+- Bara `integrations/emailAdapter.js` känner till Resends adress och nyckel. Anropet har en timeout på 5 sekunder och Resends svar valideras med Zod. Mejlets innehåll byggs i `lib/orderConfirmation.js`, med ordernummer i ämnet, kundens namn, produkterna med antal och pris, frakten och totalsumman. Mejlet har både html och text.
+
+- Kundens uppgifter (namn, e-post, produktnamn) escapas innan de hamnar i HTML:en.
+
+- Samma webhook kan komma flera gånger från Stripe, men kunden ska bara få ett mejl. Webhooken hoppar över ordrar som inte längre är `pending`, så en dubblett når aldrig utskicket. Som extra skydd har varje mejl en `Idempotency-Key` som är knuten till ordern (`order-confirmation/<orderns id>`).
+
+- Ett misslyckat mejl stoppar inte ordern. Mejlet ligger i en egen try/catch, felet loggas och webhooken svarar ändå 200 till Stripe, så ordern blir betald även om Resend inte svarar eller ger ett fel (t.ex. fel API-nyckel).
+
+- Känd begränsning: om ett mejl misslyckas skickas det inte om automatiskt. Felet finns i loggen med ordernumret, så mejlet kan skickas om manuellt. I en riktig shop hade jag sparat Resends id på ordern och haft en kö för att skicka om.
+
+- Jag testade att ett köp ger ett mejl, att samma webhook igen inte ger ett nytt mejl och att en felaktig API-nyckel ändå ger en betald order, både lokalt och i den deployade shoppen.
+
+Orderbekräftelsen som kunden får efter ett lyckat köp i den deployade shoppen:
+
+![Orderbekräftelse via e-post](Documents/confirmation_email.png)
