@@ -3,6 +3,8 @@
 ## KOM IGÅNG:
 https://boyf-ren-ts.vercel.app/
 
+Obs: backend ligger på Renders gratisplan och somnar efter en stund utan trafik, så första inloggningen eller beställningen kan ta ungefär en halv minut.
+
 ### Steg för att starta klienten och servern lokalt:
 1. Öppna en terminal och skriv in "cd .\frontend\" och tryck Enter, efter det skriv in "npm run dev" och tryck Enter
 3. Öppna en till terminal och skriv in "cd .\backend\" och tryck Enter, efter det skriv in "npm run dev" och tryck Enter
@@ -198,7 +200,7 @@ Jag valde en JWT i en httpOnly-cookie då den är tillståndslös, så servern b
 ## Labb 7:
 
 ## Kom igång (GitHub)
-- Skapa en OAuth App på GitHub under Settings, Developer settings, OAuth Apps. Kopiera Client ID och generera en ny client secret och kopiera den. Lägg in en Homepage URL som leder till din deployade sida och en Redirect URI som leder till din deployade sida med `/api/auth/github/callback` i slutet av länken, och spara. För att testa lokalt kan du lägga till `http://localhost:5173/api/auth/github/callback` i en egen OAuth App. Jag har en app för lokalt och en separat för produktion, så att produktionens client secret aldrig finns på min dator.
+- Skapa en OAuth App på GitHub under Settings, Developer settings, OAuth Apps. Kopiera Client ID och generera en ny client secret och kopiera den. Lägg in en Homepage URL (https://boyf-ren-ts.vercel.app) och en Redirect URI (Authorization callback URL) (https://boyf-ren-ts.vercel.app/api/auth/github/callback), och spara. För att testa lokalt kan du lägga till `http://localhost:5173/api/auth/github/callback` i en egen OAuth App. Jag har en app för lokalt och en separat för produktion, så att produktionens client secret aldrig finns på min dator.
 
 - Gå sedan till Personal access tokens och skapa en Fine-grained token. Koppla den till rätt repo med bara Issues read/write och ett utgångsdatum (jag satte min på 90 dagar).
 
@@ -216,6 +218,8 @@ Jag valde en JWT i en httpOnly-cookie då den är tillståndslös, så servern b
 8. Servern skapar admin-token och skickar tillbaka admin till adminsidan.
 
 Avbruten inloggning och fel från GitHub ger ett begripligt meddelande på inloggningssidan.
+
+Anropen till GitHub har en timeout på 5 sekunder, och om GitHub inte svarar eller avvisar koden får admin ett begripligt meddelande på inloggningssidan och shoppen kraschar inte
 
 När man väl loggats in med GitHub som admin kan man klicka på Issues i admin dashboarden och där både skapa nya issues och se redan existerande öppna issues, som länkar till GitHub repot med mer detaljer. Issuen skapas av shoppens konto, så i texten står vilken admin som rapporterade den.
 
